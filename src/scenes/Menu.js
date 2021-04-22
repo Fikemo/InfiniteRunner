@@ -1,4 +1,6 @@
-class Menu extends Phaser.Scene{
+import Test from "../prefabs/Test.js";
+
+export default class Menu extends Phaser.Scene{
     constructor(){
         super("menuScene");
     }
@@ -8,7 +10,8 @@ class Menu extends Phaser.Scene{
     }
 
     create(){
-
+        this.testPrefab = new Test(this);
+        console.log(this.testPrefab);
     }
 
     update(){

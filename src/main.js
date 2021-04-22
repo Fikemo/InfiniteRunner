@@ -1,3 +1,5 @@
+import Menu from "./scenes/Menu.js";
+
 let config = {
     type: Phaser.AUTO,
     width: 960,
