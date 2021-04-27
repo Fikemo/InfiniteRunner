@@ -24,5 +24,15 @@ let config = {
 }
 
 
-let game;
-export default game = new Phaser.Game(config);
+//let game;
+let game  = new Phaser.Game(config);
+
+//export default game = new Phaser.Game(config);
+
+// set UI sizes 
+/*
+let borderUISize = game.config.height / 15;
+let borderPadding = borderUISize / 3;
+*/
+
+export default game;

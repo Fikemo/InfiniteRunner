@@ -10,6 +10,7 @@ export default class Load extends Phaser.Scene {
         this.load.image('groundTile', 'groundTile.png');
         this.load.image('background', 'background_mockup.png');
         this.load.image('enemy', 'enemy.png');
+        this.load.image('heart', 'hud_heartFull.png');
         this.load.spritesheet('ninja', 'Ninja.png', {
             frameWidth: 100,
             frameHeight: 100,
