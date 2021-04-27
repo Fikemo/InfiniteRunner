@@ -23,6 +23,10 @@ export default class Play extends Phaser.Scene{
     create(){
 
         this.background = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background').setOrigin(0);
+        this.add.rectangle(800, 20, 420, 80, 0xBBBBBB).setOrigin(0, 0);
+        this.add.rectangle(810, 30, 420, 60, 0x888888).setOrigin(0, 0);
+        this.heart = this.add.image(820, 40, 'heart').setOrigin(0, 0);
+        this.heart = this.add.image(890, 40, 'heart').setOrigin(0, 0);
 
         this.bgm = this.sound.add('bgm', {volume: 0.1, loop: true});
         this.bgm.play();
