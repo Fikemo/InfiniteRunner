@@ -1,12 +1,29 @@
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, texture, state){
+    /** @type {string} */
+    state;
+
+    /** @type {boolean} */
+    newEnemy;
+
+    /** @type {number} */
+    targetX;
+    
+    /** @type {number} */
+    targetY;
+
+    /**
+     * @param {Phaser.Scene} scene
+     * @param {string} texture
+     * @param {string} state
+     */
+     constructor(scene, texture, state){
         super(
             scene,
             scene.scale.width + 32,
             Phaser.Math.Between(scene.scale.height / 2, scene.scale.height - 32 * 2 + 5),
             texture
         )
-
+        
         this.state = state;
         scene.enemyCount++;
         scene.add.existing(this);
@@ -16,6 +33,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setImmovable();
         this.body.setAllowGravity(false);
         this.newEnemy = true;
+        this.body.setCircle(this.width/2);
 
         this.idleTimer = this.scene.time.delayedCall(Phaser.Math.Between(500, 2000), () => {
             this.state = 'charge';
