@@ -7,6 +7,10 @@ let config = {
     width: 960,
     height: 480,
     scene: [Load, Menu, Play],
+    scale: {
+        // mode: Phaser.Scale.FIT,
+        // autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
     physics: {
         default: 'arcade',
         arcade: {
@@ -15,7 +19,8 @@ let config = {
             },
             debug: true,
         },
-    }
+    },
+    pixelArt: true,
 }
 
 
