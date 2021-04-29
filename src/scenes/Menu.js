@@ -15,7 +15,7 @@ export default class Menu extends Phaser.Scene{
             fontSize: '28px',
             backgroundColor: '#A3C941',
             color: '#600605',
-            aline: 'right',
+            aline: 'center',
             padding: {
                 top: 5,
                 bottom: 5,
@@ -25,8 +25,10 @@ export default class Menu extends Phaser.Scene{
 
         this.add.image(500, 1280, 'logo');
 
-        this.add.text(game.config.width/3.0, game.config.height/2.5, 'Project Desert Ninja', menuConfig).setOrigin(0.0);
-        this.add.text(game.config.width/3.1, game.config.height/2, 'Click anywhere to Play', menuConfig).setOrigin(0.0);
+        this.add.text(game.config.width/2, game.config.height/2 + 120, 'Click to Start', menuConfig).setOrigin(0.5);
+
+        this.add.image(this.scale.width / 2, this.scale.height / 2 - 54,'title').setOrigin(0.5);
+
 
         this.input.on('pointerdown', () => this.scene.start('playScene'));
     }

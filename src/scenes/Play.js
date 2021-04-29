@@ -1,3 +1,5 @@
+import { StateMachine } from "../../lib/StateMachine.js";
+import { RunningState, JumpingState, AttackingState, HurtState, AttackingInAirState } from "../prefabs/Player.js";
 import game from "../main.js";
 import Enemy from "../prefabs/Enemy.js";
 import Player from "../prefabs/Player.js";
@@ -36,8 +38,19 @@ export default class Play extends Phaser.Scene{
 
     create(){
 
+        // add cursor buttons
+        // TODO: Instead of using cursors, use space to jump and ASDF for other things
+        this.cursors = this.input.keyboard.createCursorKeys();
+
         // create background
-        this.background = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background').setOrigin(0);
+        //this.background = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background').setOrigin(0);
+        this.sky = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'sky').setOrigin(0);
+        // this.sun = this.add.tileSprite(this.scale.width * 0.25, -80 , this.scale.width, this.scale.height, 'sun').setOrigin(0);
+        this.evening_sun = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'evening_sun').setOrigin(0);
+        this.background03 = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background03').setOrigin(0);
+        this.haze = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'haze').setOrigin(0);
+        this.background02 = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background02').setOrigin(0);
+        this.background01 = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background01').setOrigin(0);
         this.add.rectangle(800, 20, 420, 80, 0xBBBBBB).setOrigin(0, 0);
         this.add.rectangle(810, 30, 420, 60, 0x888888).setOrigin(0, 0);
         this.heart = this.add.image(820, 40, 'heart').setOrigin(0, 0);
@@ -59,18 +72,21 @@ export default class Play extends Phaser.Scene{
 
         this.groundScroll = this.add.tileSprite(0, this.scale.height - tileSize, this.scale.width, tileSize, 'groundTile').setOrigin(0);
 
-        // create the player
+        // create the player and their state machine
         this.player = new Player(this, this.playerSpawnX, this.playerSpawnY, 'ninja');
+        this.playerFSM = new StateMachine('running', {
+            running: new RunningState(),
+            jumping: new JumpingState(),
+            attacking: new AttackingState(),
+            attackingInAir: new AttackingInAirState(),
+            hurt: new HurtState(),
+        }, [this, this.player]);
 
         // create player attack hitbox
         this.playerAttackHitbox = new PlayerAttackHitbox(this);
 
         // add collision between player and the ground
         this.physics.add.collider(this.player, this.ground);
-
-        // add cursor buttons
-        // TODO: Instead of using cursors, use space to jump and ASDF for other things
-        this.cursors = this.input.keyboard.createCursorKeys();
 
         // make sure that update is run on the group of enemy's
         // this actually makes it so we don't have to call the enemies' update() in this scene's update()
@@ -85,22 +101,16 @@ export default class Play extends Phaser.Scene{
     update(time, delta){
         let deltaMultiplier = (delta/(16 + 2/3));
 
-        this.background.tilePositionX += ( this.scrollSpeed / 4) * deltaMultiplier;
-        this.groundScroll.tilePositionX += ( this.scrollSpeed ) * deltaMultiplier;
+        // this.background.tilePositionX += ( this.scrollSpeed / 4) * deltaMultiplier;
+        this.background01.tilePositionX += (this.scrollSpeed * 0.9) * deltaMultiplier;
+        this.background02.tilePositionX += (this.scrollSpeed * 0.6) * deltaMultiplier;
+        this.background03.tilePositionX += (this.scrollSpeed * 0.3) * deltaMultiplier;
+        this.groundScroll.tilePositionX += (this.scrollSpeed)       * deltaMultiplier;
+
+        this.playerFSM.step();
 
         // update playerAttackHitbox
         this.playerAttackHitbox.update();
-
-        // check if player is grounded
-        this.player.isGrounded = this.player.body.touching.down;
-        // if so, we have jumps to spare
-        if (this.player.isGrounded){
-            this.player.anims.play('ninja', true);
-            this.jumps = 1;
-            this.jumping = false;
-        } else {
-            this.player.anims.pause();
-        }
 
         // check for down arrow press for attack
         if (Phaser.Input.Keyboard.JustDown(this.cursors.down)){
@@ -108,22 +118,7 @@ export default class Play extends Phaser.Scene{
         }
         // check enemy and player attack hitbox overlap while the hitbox is in an attack
         if (this.playerAttackHitbox.getAttacking()){
-            this.physics.overlap(this.playerAttackHitbox, this.enemyGroup, this.destroyEnemy);
-        }
-
-        // allow steady velocity change up to a certain key down duration
-        if (this.jumps > 0 && Phaser.Input.Keyboard.DownDuration(this.cursors.up, 200)){
-            this.player.body.velocity.y = -600;
-            this.jumping = true;
-        } else {
-
-        }
-
-        // finally, letting go of the Up key subtracts a jump
-        // TODO: A player upgrade could be a second jump in the air
-        if (this.jumping && Phaser.Input.Keyboard.UpDuration(this.cursors.up)){
-            this.jumps--;
-            this.jumping = false;
+            this.physics.overlap(this.playerAttackHitbox, this.enemyGroup, this.destroyEnemy, null, this);
         }
 
         // run enemy spawn
@@ -132,8 +127,15 @@ export default class Play extends Phaser.Scene{
         }
 
         // player enemy collision
-        // TODO: Make an actual function to be called when the player gets hit. Something like playerHit(){...}
-        // this.physics.overlap(this.player, this.enemyGroup, () => { console.log("player hit") })
+        this.physics.overlap(this.player, this.enemyGroup, this.hurtPlayer, () => {return !this.player.invicible}, this);
+    }
+
+    hurtPlayer(player, enemy){
+        // console.log(this.playerFSM);
+        if (!enemy.alreadyOverlapping){
+            this.playerFSM.transition('hurt');
+            enemy.alreadyOverlapping = true;
+        }
     }
 
     /**Create a new enemy and add it to the enemyGroup() */
