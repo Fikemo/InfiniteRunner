@@ -23,6 +23,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             Phaser.Math.Between(scene.scale.height / 2, scene.scale.height - 32 * 2 + 5),
             texture
         )
+
+        this.FSM = null;
         
         this.state = state;
         scene.enemyCount++;

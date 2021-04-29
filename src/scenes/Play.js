@@ -141,6 +141,9 @@ export default class Play extends Phaser.Scene{
     /**Create a new enemy and add it to the enemyGroup() */
     addEnemy(){
         let enemy = new Enemy(this, 'enemy', 'idle');
+        enemy.FSM = new StateMachine('arriving', {
+
+        }, [this, enemy]);
         this.enemyGroup.add(enemy);
     }
 
