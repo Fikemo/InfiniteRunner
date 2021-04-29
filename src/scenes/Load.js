@@ -8,7 +8,19 @@ export default class Load extends Phaser.Scene {
         this.load.path = './assets/';
         // take care of all of our asset loading now
         this.load.image('groundTile', 'groundTile.png');
+
+        // background
         this.load.image('background', 'background_mockup.png');
+        this.load.image('background01', 'background01.png');
+        this.load.image('background02', 'background02.png');
+        this.load.image('background03', 'background03.png');
+        this.load.image('sky', 'evening_sky.png');
+        this.load.image('haze', 'haze.png');
+        this.load.image('sun', 'sun.png');
+        this.load.image('evening_sun', 'evening_sun.png');
+
+        this.load.image('title', 'Title.png');
+
         this.load.image('enemy', 'enemy.png');
         this.load.image('heart', 'hud_heartFull.png');
         this.load.spritesheet('ninja', 'Ninja.png', {

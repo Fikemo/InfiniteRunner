@@ -3,6 +3,7 @@ import Play from "./scenes/Play.js";
 import Load from "./scenes/Load.js";
 
 let config = {
+    parent: "phaser-game",
     type: Phaser.AUTO,
     width: 960,
     height: 480,
@@ -20,7 +21,9 @@ let config = {
             debug: true,
         },
     },
-    pixelArt: true,
+    // pixelArt: true,
+    antiAlias: false,
+    fps: 60,
 }
 
 
