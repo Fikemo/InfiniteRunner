@@ -19,6 +19,10 @@ export default class Load extends Phaser.Scene {
         this.load.image('sun', 'sun.png');
         this.load.image('evening_sun', 'evening_sun.png');
 
+        this.load.image('health_filled', 'health_bar_filled.png');
+        this.load.image('health_empty', 'health_bar_empty.png');
+        this.load.image('health_background', 'health_bar_background.png');
+
         this.load.image('title', 'Title.png');
 
         this.load.image('enemy', 'enemy.png');

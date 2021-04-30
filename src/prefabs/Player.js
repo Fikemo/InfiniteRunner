@@ -1,4 +1,5 @@
 import { State } from "../../lib/StateMachine.js";
+import PlayerAttackHitbox from "./PlayerAttackHitbox.js";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite{
     /**
@@ -6,18 +7,47 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
      * @param {number} x
      * @param {number} y
      * @param {string} texture
+     * @param {PlayerAttackHitbox} attackHitbox
      */
-    constructor(scene, x, y, texture){
+    constructor(scene, x, y, texture, attakcHitbox){
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
         // this.anims.play('ninja', true);
         this.isGrounded = false;
-        this.health = 5;
+        this.maxHealth = 2;
+        this.currentHealth = 2;
+        this.updateUI = true;
+
+        this.attackHitbox = attakcHitbox;
+
+        this.stats = {
+            player: null,
+
+            cH: 2,
+            get currentHealth() { return this.cH; },
+            set currentHealth(value) {
+                this.cH = value;
+                if (this.player){ this.player.updateUI = true; }
+            },
+
+            mH: 2,
+            get maxHealth() { return this.mH; },
+            set maxHealth(value) {
+                this.mH = value;
+                if (this.player){ this.player.updateUI = true; }
+            },
+        }
+        this.stats.player = this;
+
         this.invicible = false;
         this.jumpsRemaining = 0;
         this.fsm = scene.playerFSM;
+    }
+
+    update(){
+
     }
 }
 
@@ -33,6 +63,7 @@ class RunningState extends State {
 
     execute(scene, player){
         const { left, right, up, down, space, shift } = scene.cursors;
+        player.alpha = player.invicible ? 0.5 : 1;
 
         // trasition to jump
         if (Phaser.Input.Keyboard.JustDown(space)){
@@ -42,6 +73,8 @@ class RunningState extends State {
             this.stateMachine.transition('jumping');
             return;
         }
+
+        player.update();
     }
 }
 
@@ -74,16 +107,24 @@ class JumpingState extends State {
             // console.log("landed");
             this.stateMachine.transition('running');
         }
+
+        player.update();
     }
 }
 
 class AttackingState extends State {
     enter(scene, player){
-
+        player.attackHitbox.attacking = true;
     }
 
     execute(scene, player){
         
+
+        player.update();
+    }
+
+    exit(scene, player){
+        player.attackHitbox.attacking = false;
     }
 }
 
@@ -94,13 +135,16 @@ class AttackingInAirState extends State {
 
     execute(scene, player){
         
+
+        player.update();
     }
 }
 
 class HurtState extends State {
     enter(scene, player){
         // TODO: reduce player health
-        console.log('hurt');
+        player.attackHitbox.attacking = false;
+        // console.log('hurt');
         player.invicible = true;
         this.recovered = false;
         this.touchedDown = player.body.touching.down;
@@ -117,6 +161,8 @@ class HurtState extends State {
         }
 
         if (this.touchedDown && this.recovered == true) { this.stateMachine.transition('running')};
+
+        player.update();
     }
 }
 

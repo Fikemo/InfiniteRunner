@@ -37,6 +37,7 @@ export default class Play extends Phaser.Scene{
     }
 
     create(){
+        // creat dat gui
         this.gui = new dat.GUI();
 
         // add cursor buttons
@@ -52,10 +53,10 @@ export default class Play extends Phaser.Scene{
         this.haze = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'haze').setOrigin(0);
         this.background02 = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background02').setOrigin(0);
         this.background01 = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'background01').setOrigin(0);
-        this.add.rectangle(800, 20, 420, 80, 0xBBBBBB).setOrigin(0, 0);
-        this.add.rectangle(810, 30, 420, 60, 0x888888).setOrigin(0, 0);
-        this.heart = this.add.image(820, 40, 'heart').setOrigin(0, 0);
-        this.heart2 = this.add.image(890, 40, 'heart').setOrigin(0, 0);
+        // this.add.rectangle(800, 20, 420, 80, 0xBBBBBB).setOrigin(0, 0);
+        // this.add.rectangle(810, 30, 420, 60, 0x888888).setOrigin(0, 0);
+        // this.heart = this.add.image(820, 40, 'heart').setOrigin(0, 0);
+        // this.heart2 = this.add.image(890, 40, 'heart').setOrigin(0, 0);
 
         // play the bgm
         this.bgm = this.sound.add('bgm', {volume: 0.1, loop: true});
@@ -73,8 +74,11 @@ export default class Play extends Phaser.Scene{
 
         this.groundScroll = this.add.tileSprite(0, this.scale.height - tileSize, this.scale.width, tileSize, 'groundTile').setOrigin(0);
 
+        // create player attack hitbox
+        this.playerAttackHitbox = new PlayerAttackHitbox(this);
+
         // create the player and their state machine
-        this.player = new Player(this, this.playerSpawnX, this.playerSpawnY, 'ninja');
+        this.player = new Player(this, this.playerSpawnX, this.playerSpawnY, 'ninja', this.playerAttackHitbox);
         this.playerFSM = new StateMachine('running', {
             running: new RunningState(),
             jumping: new JumpingState(),
@@ -82,9 +86,29 @@ export default class Play extends Phaser.Scene{
             attackingInAir: new AttackingInAirState(),
             hurt: new HurtState(),
         }, [this, this.player]);
+        this.playerMaxHealthDebug = 10;
+        let playerFolder = this.gui.addFolder('Player Parameters');
+        playerFolder.add(this.player.stats, 'currentHealth', 0, this.playerMaxHealthDebug, 1);
+        playerFolder.add(this.player.stats, 'maxHealth', 0, this.playerMaxHealthDebug, 1);
+        playerFolder.open();
+        
+        // health bar
+        let healthbarCoords = new Phaser.Math.Vector2(32,32);
+        let healthbarSegmentWidth = 40;
+        this.maxHealthDisplay = [];
+        for (let i = 0; i < this.playerMaxHealthDebug; i++){
+            this.maxHealthDisplay.push(this.add.image(healthbarCoords.x + healthbarSegmentWidth * i, healthbarCoords.y, 'health_background').setOrigin(0));
+        }
 
-        // create player attack hitbox
-        this.playerAttackHitbox = new PlayerAttackHitbox(this);
+        this.emptyHealthDisplay = [];
+        for (let i = 0; i < this.playerMaxHealthDebug; i++){
+            this.emptyHealthDisplay.push(this.add.image(healthbarCoords.x + healthbarSegmentWidth * i + 8, healthbarCoords.y + 4, 'health_empty').setOrigin(0));
+        }
+
+        this.filledHealthDisplay = [];
+        for (let i = 0; i < this.playerMaxHealthDebug; i++){
+            this.filledHealthDisplay.push(this.add.image(healthbarCoords.x + healthbarSegmentWidth * i + 8, healthbarCoords.y + 4, 'health_filled').setOrigin(0));
+        }
 
         // add collision between player and the ground
         this.physics.add.collider(this.player, this.ground);
@@ -94,9 +118,6 @@ export default class Play extends Phaser.Scene{
         this.enemyGroup = this.add.group({
             runChildUpdate: true
         })
-
-        /** @type {Phaser.Math.Vector2} */
-        let testVec2 = new Phaser.Math.Vector2(1,2);
     }
 
     update(time, delta){
@@ -109,6 +130,28 @@ export default class Play extends Phaser.Scene{
         this.groundScroll.tilePositionX += (this.scrollSpeed)       * deltaMultiplier;
 
         this.playerFSM.step();
+        if (this.player.updateUI) {
+            // console.log("UI needs update");
+            // if (this.player.stats.currentHealth > this.player.stats.maxHealth) {this.player.stats.maxHealth = this.player.stats.currentHealth;}
+
+            for (let i = 0; i < this.maxHealthDisplay.length; i++){
+                if (i > this.player.stats.maxHealth - 1){
+                    this.maxHealthDisplay[i].alpha = 0;
+                    this.emptyHealthDisplay[i].alpha = 0;
+                } else {
+                    this.maxHealthDisplay[i].alpha = 1;
+                    this.emptyHealthDisplay[i].alpha = 1;
+                }
+
+                if (i > this.player.stats.currentHealth - 1){
+                    this.filledHealthDisplay[i].alpha = 0;
+                } else {
+                    this.filledHealthDisplay[i].alpha = 1;
+                }
+            }
+
+            this.player.updateUI = false;
+        }
 
         // update playerAttackHitbox
         this.playerAttackHitbox.update();
