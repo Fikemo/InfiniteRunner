@@ -37,6 +37,7 @@ export default class Play extends Phaser.Scene{
     }
 
     create(){
+        this.gui = new dat.GUI();
 
         // add cursor buttons
         // TODO: Instead of using cursors, use space to jump and ASDF for other things
