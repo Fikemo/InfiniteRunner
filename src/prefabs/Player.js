@@ -1,79 +1,178 @@
-import { State } from "../../lib/StateMachine.js";
+import { State, StateMachine } from "../../lib/StateMachine.js";
+
+/**@type {number} Time in milliseconds for the player to be invincible when in the Running State after being hurt*/
+const INVINCIBILITY_TIME = 1000;
+/**@type {number} Time in milliseconds for the player to remain in the hurt state when on the ground*/
+const HURT_TIME = 1000;
+/**@type {number} The velocity applied to the player when they jump*/
+const JUMP_VELOCITY = -600;
+/**@type {number} Time in milliseconds for how long the jump key can be held*/
+const JUMP_TIMER = 200;
 
 export default class Player extends Phaser.Physics.Arcade.Sprite{
-    /**
-     * @param {Phaser.Scene} scene
-     * @param {number} x
-     * @param {number} y
-     * @param {string} texture
-     */
+
+    // Special getting and setting functions for current health and max health
+    // #cH and #mH are private vairables to the Player class
+    // use player.currentHealth and player.maxHealth outside of this class to get and set the values
+    // For example, simply use player.maxHealth = 2 or player.currentHealth--
+    // whenever you get currentHealth, it will return #cH, same with maxHealth and #mH
+    // whenever you set currentHealth, it will set #cH to the new value and set UINeedsUpdate to true since the UI will need to be updated due to this change
+    /**@type {number} */
+    #cH;
+    get currentHealth() {return this.#cH};
+    set currentHealth(value) {
+        this.#cH = value;
+        this.UINeedsUpdate = true;
+    }
+    /**@type {number} */
+    #mH;
+    get maxHealth() {return this.#mH};
+    set maxHealth(value) {
+        this.#mH = value;
+        this.UINeedsUpdate = true;
+    }
+
+    /**@type {bool} if the player's stats have changed and the UI needs to be updated*/
+    UINeedsUpdate;
+    /**@type {StateMachine} finite state machine for the player*/
+    FSM;
+    /**@type {PlayerAttackHitbox} a collider for where the player's attacks hit*/
+    attackHitbox;
+
+    /**@type {bool} if the player is invincible */
+    invincible;
+    /**@type {bool} if the player is touching the ground */
+    grounded;
+    /**@type {integer} the number of times the player can jump before landing*/
+    maxJumps;
+    /**@type {integer} the number jumps left that the player can do before landing*/
+    jumpsRemaining;
+    
     constructor(scene, x, y, texture){
         super(scene, x, y, texture);
+        this.currentHealth = 2;
+        this.maxHealth = 2;
+        this.UINeedsUpdate = true;
+
+        this.FSM = new StateMachine('running', {
+            running: new RunningState(),
+            jumping: new JumpingState(),
+            attacking: new AttackingState(),
+            attackingInAir: new AttackingInAirState(),
+            hurt: new HurtState(),
+            dead: new DeadState(),
+        },[scene, this]);
+
+        this.attackHitbox = new PlayerAttackHitbox(scene, x + this.width, y + this.height);
+        this.damageHitbox = new PlayerDamageHitbox(scene, x, y);
+
+        this.grounded = false;
+        this.invincible = false;
+        this.maxJumps = 1;
+        this.jumpsRemaining = this.maxJumps;
+        
         scene.add.existing(this);
         scene.physics.add.existing(this);
+        this.setOrigin(0,0);
 
-        // this.anims.play('ninja', true);
-        this.isGrounded = false;
-        this.health = 5;
-        this.invicible = false;
-        this.jumpsRemaining = 0;
-        this.fsm = scene.playerFSM;
+        this.body.overlapX = 32;
+    }
+
+    update(time, delta){
+        this.FSM.step();
+
+        // update the 
+        this.attackHitbox.x = this.body.x + this.body.width;
+        this.attackHitbox.y = this.body.y + this.body.height - (this.body.halfHeight + this.attackHitbox.body.halfHeight);
+
+        // update damage hitbox
+        this.damageHitbox.x = this.body.x + this.body.halfWidth - this.damageHitbox.body.halfWidth;
+        this.damageHitbox.y = this.body.y + this.body.halfHeight - this.damageHitbox.body.halfHeight;
+    }
+}
+
+class PlayerAttackHitbox extends Phaser.Physics.Arcade.Sprite{
+    constructor(scene, x, y){
+        super(scene, x, y);
+
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        this.body.setSize(50,70,false);
+        this.body.setAllowGravity(false);
+        this.setOrigin(0)
+        this.setDebugBodyColor(0xFF0000);
+
+    }
+}
+
+class PlayerDamageHitbox extends Phaser.Physics.Arcade.Sprite{
+    constructor(scene, x, y){
+        super(scene, x, y);
+
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        this.body.setSize(40,40,false);
+        this.body.setAllowGravity(false);
+        this.setOrigin(0);
+        this.setDebugBodyColor(0x0000FF);
     }
 }
 
 class RunningState extends State {
     enter(scene, player){
-        player.anims.play('ninja', true);
-        // console.log(player.invicible);
-        if (player.invicible){
-            // TODO: No magic numbers
-            this.invicibleTimer = scene.time.delayedCall(1000, () => {player.invicible = false;});
+        // console.log('running');
+        player.anims.play('ninja_run', true);
+        if (player.invincible){
+            this.invincibleTimer = scene.time.delayedCall(INVINCIBILITY_TIME, () =>{ player.invincible = false; });
         }
+        player.jumpsRemaining = player.maxJumps;
     }
 
     execute(scene, player){
-        const { left, right, up, down, space, shift } = scene.cursors;
+        const {left, right, up, down, space, shift} = scene.cursors;
 
-        // trasition to jump
+        // make the player semitransparent if they are invincible
+        player.alpha = player.invincible ? 0.5 : 1;
+
+        // transition to Jump
         if (Phaser.Input.Keyboard.JustDown(space)){
-            // console.log('jump initiated');
-            // TODO: No magic numbers
-            player.jumpsRemaining = 1;
-            this.stateMachine.transition('jumping');
+            player.FSM.transition('jumping');
             return;
         }
+    }
+
+    exit(scene, player){
+
     }
 }
 
 class JumpingState extends State {
     enter(scene, player){
-        player.anims.stop();
+        // console.log('jumping');
+        player.anims.play('ninja_jump');
     }
 
     execute(scene, player){
-        const { left, right, up, down, space, shift } = scene.cursors;
+        const {left, right, up, down, space, shift} = scene.cursors;
 
-        let jumping = true;
-
-        // TODO: No magic numbers
-        if (player.jumpsRemaining > 0 && Phaser.Input.Keyboard.DownDuration(space, 200)){
-            player.body.velocity.y = -600;
+        if (player.jumpsRemaining > 0 && Phaser.Input.Keyboard.DownDuration(space, JUMP_TIMER)){
+            player.body.velocity.y = JUMP_VELOCITY;
         }
 
         if (Phaser.Input.Keyboard.UpDuration(space)){
             player.jumpsRemaining--;
         }
 
-        if (player.body.velocity.y < 0){
-            jumping = true;
-        } else {
-            jumping = false;
+        let jumping = player.body.velocity.y < 0;
+
+        if (player.body.touching.down && !jumping){
+            player.FSM.transition('running');
         }
 
-        if (player.body.touching.down && jumping == false) {
-            // console.log("landed");
-            this.stateMachine.transition('running');
-        }
+    }
+
+    exit(scene, player){
+        
     }
 }
 
@@ -83,6 +182,10 @@ class AttackingState extends State {
     }
 
     execute(scene, player){
+
+    }
+
+    exit(scene, player){
         
     }
 }
@@ -93,15 +196,18 @@ class AttackingInAirState extends State {
     }
 
     execute(scene, player){
+
+    }
+
+    exit(scene, player){
         
     }
 }
 
 class HurtState extends State {
-    enter(scene, player){
-        // TODO: reduce player health
-        console.log('hurt');
-        player.invicible = true;
+    enter(scene, player, enemy){
+        // console.log(enemy);
+        player.invincible = true;
         this.recovered = false;
         this.touchedDown = player.body.touching.down;
         this.timerStarted = false;
@@ -109,15 +215,31 @@ class HurtState extends State {
 
     execute(scene, player){
         this.touchedDown = player.body.touching.down;
+
         if (this.touchedDown && !this.timerStarted){
-            // TODO: No magic numbers
-            // TODO: Maybe make the recover based on the end of a recovery animation rather than a timer
-            this.timer = scene.time.delayedCall(500, () => {this.recovered = true;});
+            // after a certain period of time, the player recovers from being hurt
+            this.timer = scene.time.delayedCall(HURT_TIME, () => { this.recovered = true; })
             this.timerStarted = true;
         }
 
-        if (this.touchedDown && this.recovered == true) { this.stateMachine.transition('running')};
+        if (this.touchedDown && this.recovered) { player.FSM.transition('running') };
+    }
+
+    exit(scene, player){
+        
     }
 }
 
-export { RunningState, JumpingState, AttackingState, HurtState, AttackingInAirState }
+class DeadState extends State {
+    enter(scene, player){
+        // console.log('dead');
+    }
+
+    execute(scene, player){
+
+    }
+
+    exit(scene, player){
+        
+    }
+}

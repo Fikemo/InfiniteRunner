@@ -1,28 +1,28 @@
 export default class PlayerAttackHitbox extends Phaser.Physics.Arcade.Sprite{
-    defaultActiveTime;
-    activeTimer;
-    defaultAnticipationTime;
+    // defaultActiveTime;
+    // activeTimer;
+    // defaultAnticipationTime;
     
     constructor(scene){
         super(scene)
-        this.defaultActiveTime = 500;
-        this.defaultAnticipationTime = 100;
+        // this.defaultActiveTime = 500;
+        // this.defaultAnticipationTime = 100;
         
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        this.body.setSize(50,100, true);
+        // this.body.setSize(50,100, true);
         this.body.allowGravity = false;
-        this.setDebugBodyColor(0xFF0000);
+        // this.setDebugBodyColor(0xFF0000);
 
-        // this.body.setEnable(false);
-        this.attacking = false;
+        // // this.body.setEnable(false);
+        // this.attacking = false;
     }
 
     update(){
-        if (this.scene.player != undefined && this.scene.player != null){
-            this.x = this.scene.player.x + 50;
-            this.y = this.scene.player.y;
-        }
+        // if (this.scene.player != undefined && this.scene.player != null){
+        //     this.x = this.scene.player.x + 50;
+        //     this.y = this.scene.player.y;
+        // }
     }
 
     getAttacking(){
@@ -44,12 +44,12 @@ export default class PlayerAttackHitbox extends Phaser.Physics.Arcade.Sprite{
         // }
 
         // this works, but it might be iffy in the future, I dunno
-        if (time == null) time = this.defaultActiveTime;
-        if (!this.attacking){
-            this.attacking = true;
-            this.activeTimer = this.scene.time.delayedCall(time, () =>{
-                this.attacking = false;
-            })
-        }
+        // if (time == null) time = this.defaultActiveTime;
+        // if (!this.attacking){
+        //     this.attacking = true;
+        //     this.activeTimer = this.scene.time.delayedCall(time, () =>{
+        //         this.attacking = false;
+        //     })
+        // }
     }
 }
