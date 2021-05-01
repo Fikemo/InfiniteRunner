@@ -123,7 +123,7 @@ export default class Play extends Phaser.Scene{
         }
 
         //player enemy collision
-        this.physics.overlap(this.player, this.enemyGroup, this.playerEnemyOverlap, null, this)
+        this.physics.overlap(this.player.damageHitbox, this.enemyGroup, this.playerEnemyOverlap, null, this)
         
     }
 

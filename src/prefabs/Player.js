@@ -63,7 +63,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
             dead: new DeadState(),
         },[scene, this]);
 
-        this.attackHitbox = new PlayerAttackHitbox(scene, x, y);
+        this.attackHitbox = new PlayerAttackHitbox(scene, x + this.width, y + this.height);
+        this.damageHitbox = new PlayerDamageHitbox(scene, x, y);
 
         this.grounded = false;
         this.invincible = false;
@@ -72,18 +73,48 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
         
         scene.add.existing(this);
         scene.physics.add.existing(this);
+        this.setOrigin(0,0);
 
         this.body.overlapX = 32;
     }
 
     update(time, delta){
         this.FSM.step();
+
+        // update the 
+        this.attackHitbox.x = this.body.x + this.body.width;
+        this.attackHitbox.y = this.body.y + this.body.height - (this.body.halfHeight + this.attackHitbox.body.halfHeight);
+
+        // update damage hitbox
+        this.damageHitbox.x = this.body.x + this.body.halfWidth - this.damageHitbox.body.halfWidth;
+        this.damageHitbox.y = this.body.y + this.body.halfHeight - this.damageHitbox.body.halfHeight;
     }
 }
 
 class PlayerAttackHitbox extends Phaser.Physics.Arcade.Sprite{
     constructor(scene, x, y){
         super(scene, x, y);
+
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        this.body.setSize(50,70,false);
+        this.body.setAllowGravity(false);
+        this.setOrigin(0)
+        this.setDebugBodyColor(0xFF0000);
+
+    }
+}
+
+class PlayerDamageHitbox extends Phaser.Physics.Arcade.Sprite{
+    constructor(scene, x, y){
+        super(scene, x, y);
+
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        this.body.setSize(40,40,false);
+        this.body.setAllowGravity(false);
+        this.setOrigin(0);
+        this.setDebugBodyColor(0x0000FF);
     }
 }
 
