@@ -7,7 +7,6 @@ import PlayerAttackHitbox from "../prefabs/PlayerAttackHitbox.js";
 
 export default class Play extends Phaser.Scene{
     scrollSpeed;
-
     // enemy control
     enemySpawnRate; // the time between an enemy becoming inactive and another enemy can be spawned
     enemyCount;     // the amount of currently active enemies
@@ -27,17 +26,21 @@ export default class Play extends Phaser.Scene{
         this.scrollSpeed = 5;
         this.enemyCount = 0;
         this.maxEnemyCount = 2;
-
         this.playerSpawnX = 120;
         this.playerSpawnY = this.scale.height / 2;
     }
 
-    preload(){
+    preload() {
         console.log('play loaded');
+        // this.load.audio('sfx_attack', 'playerAttack.wav');
     }
 
     create(){
-
+        this.attackSound = this.sound.add('sfx_attack');
+        this.playerInjuredSound = this.sound.add('sfx_injured');
+        this.enemyMoveSound = this.sound.add('sfx_EMovement');
+        this.enemyInjuredSound = this.sound.add('sfx_enemyInjured');
+        this.enemyDestroySound = this.sound.add('sfx_destroy');
         // add cursor buttons
         // TODO: Instead of using cursors, use space to jump and ASDF for other things
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -115,11 +118,13 @@ export default class Play extends Phaser.Scene{
         // check for down arrow press for attack
         if (Phaser.Input.Keyboard.JustDown(this.cursors.down)){
             this.playerAttackHitbox.setActive();
+            this.attackSound.play();
         }
         // check enemy and player attack hitbox overlap while the hitbox is in an attack
         if (this.playerAttackHitbox.getAttacking()){
             this.physics.overlap(this.playerAttackHitbox, this.enemyGroup, this.destroyEnemy);
-            //this.sound.play('sfx_destroy');
+            //this.enemyInjuredSound.play();
+            //this.enemyDestroySound.play();
         }
 
         // allow steady velocity change up to a certain key down duration
@@ -140,6 +145,7 @@ export default class Play extends Phaser.Scene{
         // run enemy spawn
         if (this.enemyCount < this.maxEnemyCount){
             this.addEnemy();
+            this.enemyMoveSound.play();
         }
 
         // player enemy collision
