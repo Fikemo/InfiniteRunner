@@ -42,6 +42,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         })
     }
 
+    create() {
+        this.enemyMoveSound = this.sound.add('sfx_EMovement');
+    }
+
     update(){
         if (this.newEnemy && this.x < this.scene.scale.width / 2){
             this.newEnemy = false;
@@ -66,6 +70,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             case 'charge':{
                 this.setVelocityX(-500);
                 //this.scene.sound.play('sfx_EMovement');
+                //this.enemyMoveSound.play();
             }
             break;
         }

@@ -38,7 +38,7 @@ export default class Play extends Phaser.Scene{
     create(){
         this.attackSound = this.sound.add('sfx_attack');
         this.playerInjuredSound = this.sound.add('sfx_injured');
-        this.enemyMoveSound = this.sound.add('sfx_EMovement');
+        //this.enemyMoveSound = this.sound.add('sfx_EMovement');
         this.enemyInjuredSound = this.sound.add('sfx_enemyInjured');
         this.enemyDestroySound = this.sound.add('sfx_destroy');
         // add cursor buttons
@@ -145,7 +145,7 @@ export default class Play extends Phaser.Scene{
         // run enemy spawn
         if (this.enemyCount < this.maxEnemyCount){
             this.addEnemy();
-            this.enemyMoveSound.play();
+            //this.enemyMoveSound.play();
         }
 
         // player enemy collision
