@@ -118,7 +118,23 @@ export default class Play extends Phaser.Scene{
         }
         // check enemy and player attack hitbox overlap while the hitbox is in an attack
         if (this.playerAttackHitbox.getAttacking()){
-            this.physics.overlap(this.playerAttackHitbox, this.enemyGroup, this.destroyEnemy, null, this);
+            this.physics.overlap(this.playerAttackHitbox, this.enemyGroup, this.destroyEnemy);
+            //this.sound.play('sfx_destroy');
+        }
+
+        // allow steady velocity change up to a certain key down duration
+        if (this.jumps > 0 && Phaser.Input.Keyboard.DownDuration(this.cursors.up, 200)){
+            this.player.body.velocity.y = -600;
+            this.jumping = true;
+        } else {
+
+        }
+
+        // finally, letting go of the Up key subtracts a jump
+        // TODO: A player upgrade could be a second jump in the air
+        if (this.jumping && Phaser.Input.Keyboard.UpDuration(this.cursors.up)){
+            this.jumps--;
+            this.jumping = false;
         }
 
         // run enemy spawn

@@ -65,6 +65,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             break;
             case 'charge':{
                 this.setVelocityX(-500);
+                //this.scene.sound.play('sfx_EMovement');
             }
             break;
         }
