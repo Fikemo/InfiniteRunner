@@ -10,14 +10,16 @@ export default class Load extends Phaser.Scene {
         this.load.image('groundTile', 'groundTile.png');
 
         // background
-        this.load.image('background', 'background_mockup.png');
         this.load.image('background01', 'background01.png');
         this.load.image('background02', 'background02.png');
         this.load.image('background03', 'background03.png');
         this.load.image('sky', 'evening_sky.png');
         this.load.image('haze', 'haze.png');
-        this.load.image('sun', 'sun.png');
         this.load.image('evening_sun', 'evening_sun.png');
+
+        this.load.image('health_filled', 'health_bar_filled.png');
+        this.load.image('health_empty', 'health_bar_empty.png');
+        this.load.image('health_background', 'health_bar_background.png');
 
         this.load.image('title', 'Title.png');
 
@@ -35,6 +37,20 @@ export default class Load extends Phaser.Scene {
             endFrame: 11
         });
 
+        this.load.spritesheet('ninja_run', 'NinjaRun.png', {
+            frameWidth: 70,
+            frameHeight: 80,
+            startFrame: 0,
+            endFrame: 5,
+        })
+
+        this.load.spritesheet('ninja_jump', 'NinjaJump.png', {
+            frameWidth: 60,
+            frameHeight: 80,
+            startFrame: 0,
+            endFrame: 6
+        })
+
         this.load.audio('bgm', 'bgm1.mp3');
     }
 
@@ -48,6 +64,28 @@ export default class Load extends Phaser.Scene {
             }),
             frameRate: 20,
             repeat: -1,
+        })
+
+        this.anims.create({
+            key: 'ninja_run',
+            frames: this.anims.generateFrameNumbers('ninja_run', {
+                start: 0,
+                end: 5,
+                first: 0,
+            }),
+            frameRate: 12,
+            repeat: -1,
+        })
+
+        this.anims.create({
+            key: 'ninja_jump',
+            frames: this.anims.generateFrameNumbers('ninja_jump', {
+                start:0,
+                end:6,
+                frist: 0,
+            }),
+            frameRate: 12,
+            repeat: 0,
         })
 
         // ...and pass to the next Scene
