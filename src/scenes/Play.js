@@ -13,6 +13,8 @@ const ENEMY_SPAWN_Y = 480 - 32 - 50;
 let enemySpawnTimer = 4000;
 let maxEnemiesToSpawn = 1;
 
+const MAX_SCORE_DIGITS = 7;
+
 export default class Play extends Phaser.Scene{
     // world constants
     SCORLL_SPEED;
@@ -110,9 +112,10 @@ export default class Play extends Phaser.Scene{
             this.filledHealth.push(this.add.image(healthbarPos.x +healthBarSegmentWidth * i + 8, healthbarPos.y + 4,'health_filled').setOrigin(0));
         }
 
+        // create score display
         this.scoreArray = [];
-        for (let i = 0; i < 10; i++){
-            this.scoreArray.push(this.add.sprite(healthbarPos.x + 40 * i, healthbarPos.y + 50, 'numbersAtlas', 'number0000').setOrigin(0).setFrame('number0002'));
+        for (let i = 0; i < MAX_SCORE_DIGITS; i++){
+            this.scoreArray.push(this.add.sprite(healthbarPos.x + (40 * i) + 624, healthbarPos.y, 'numbersAtlas', 'number0000').setOrigin(0));
         }
 
         // add the enemy group
@@ -134,7 +137,7 @@ export default class Play extends Phaser.Scene{
         let playerFolder = gui.addFolder('Player Parameters');
         playerFolder.add(this.player, 'currentHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
         playerFolder.add(this.player, 'maxHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
-        playerFolder.add(this.player, 'score', 0, 2000, 100);
+        playerFolder.add(this.player, 'score', 0, 2000, 50);
         playerFolder.open();
     }
 
@@ -167,8 +170,7 @@ export default class Play extends Phaser.Scene{
 
     updateUI(){
         if (this.player.UINeedsUpdate){
-            console.log('updating ui');
-            // console.log("Updating UI");
+            // console.log('updating ui');
             for (let i = 0; i < this.backgroundHealth.length; i++){
                 if (i > this.player.maxHealth - 1){
                     this.backgroundHealth[i].alpha = 0;
@@ -185,15 +187,26 @@ export default class Play extends Phaser.Scene{
                 }
             }
 
-            for (let i = 0; i < 10; i++){
-                let scoreString = String(this.player.score);
-                if (i < scoreString.length){
-                    let currentNumber = scoreString[i];
-                    this.scoreArray[i].setFrame(`number000${currentNumber}`);
+            // update the score
+            let scoreString = String(this.player.score);
+            let origLength = scoreString.length;
+            let zeroBufferPassed = false;
+            for (let i = 0; i < this.scoreArray.length - origLength; i++){
+                scoreString = "0" + scoreString;
+            }
+            if (scoreString.length > MAX_SCORE_DIGITS){
+                scoreString = "9999999";
+            }
+            for (let i = 0; i < this.scoreArray.length; i++){
+                let currentNumber = scoreString[i];
+                this.scoreArray[i].setFrame(`number000${currentNumber}`);
+                if (zeroBufferPassed || scoreString[i] != '0'){
                     this.scoreArray[i].alpha = 1;
+                    zeroBufferPassed = true;
                 } else {
-                    this.scoreArray[i].alpha = 0;
+                    this.scoreArray[i].alpha = 0.5;
                 }
+                
             }
 
             // UI no longer needs update
