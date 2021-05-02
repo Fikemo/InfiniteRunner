@@ -32,6 +32,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
         this.UINeedsUpdate = true;
     }
 
+    #s;
+    get score() {return this.#s};
+    set score(value) {
+        this.#s = value;
+        this.UINeedsUpdate = true;
+    }
+
     /**@type {bool} if the player's stats have changed and the UI needs to be updated*/
     UINeedsUpdate;
     /**@type {StateMachine} finite state machine for the player*/
@@ -70,6 +77,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
         this.invincible = false;
         this.maxJumps = 1;
         this.jumpsRemaining = this.maxJumps;
+        this.score = 0;
         
         scene.add.existing(this);
         scene.physics.add.existing(this);

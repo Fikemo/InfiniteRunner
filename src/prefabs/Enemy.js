@@ -1,78 +1,139 @@
+import { State, StateMachine } from "../../lib/StateMachine.js";
+
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
-    /** @type {string} */
-    state;
-
-    /** @type {boolean} */
-    newEnemy;
-
-    /** @type {number} */
-    targetX;
-    
-    /** @type {number} */
-    targetY;
-
-    /**
-     * @param {Phaser.Scene} scene
-     * @param {string} texture
-     * @param {string} state
-     */
-     constructor(scene, texture, state){
-        super(
+    constructor(scene, texture, spawner, difficutly, shootLaser){
+        super (
             scene,
             scene.scale.width + 32,
-            Phaser.Math.Between(scene.scale.height / 2, scene.scale.height - 32 * 2 + 5),
+            spawner.y,
             texture
         )
 
-        this.FSM = null;
-        
-        this.state = state;
-        scene.enemyCount++;
+        this.FSM = new StateMachine('arriving',{
+            arriving: new ArrivingState(),
+            idle: new IdleState(),
+            charging: new ChargingState(),
+        },[scene, this]);
+        this.spawner = spawner;
+
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        this.targetX = scene.scale.width - 50;
-        this.targetY = this.y;
-        this.setImmovable();
         this.body.setAllowGravity(false);
-        this.newEnemy = true;
-        this.body.setCircle(this.width/2);
+        this.setCircle((this.width / 2) - 2, 2, 2);
+        // this.setOrigin(0.5);
 
-        this.idleTimer = this.scene.time.delayedCall(Phaser.Math.Between(500, 2000), () => {
-            this.state = 'charge';
+        this.acceleration = -2000;
+        this.maxSpeed = 500;
+        
+    }
+
+    update(time, delta){
+        this.FSM.step();
+    }
+}
+
+class ArrivingState extends State{
+    enter(scene, enemy){
+
+        // moving in tween
+        scene.tweens.add({
+            targets: enemy,
+            x: enemy.spawner.x,
+            ease: 'Quad.easeOut',
+            duration: 1000,
+            onComplete: () => { enemy.FSM.transition('idle') },
+            onCompleteScope: enemy,
+        })
+
+        // bob up and down tween
+        scene.tweens.add({
+            targets: enemy,
+            y: enemy.spawner.y + 5,
+            ease: 'Quad.easeInOut',
+            yoyo: true,
+            repeat: -1,
+            duration: 500,
         })
     }
 
-    create() {
-        this.enemyMoveSound = this.sound.add('sfx_EMovement');
+    execute(scene, enemy){
+        
     }
 
-    update(){
-        if (this.newEnemy && this.x < this.scene.scale.width / 2){
-            this.newEnemy = false;
-            this.scene.enemyCount--;
-        }
+    exit(scene, enemy){
 
-        if (this.x < -this.width){
-            this.destroy();
-            return;
-        }
+    }
+}
 
-        switch(this.state){
-            case 'idle':
-                if (Math.abs(this.x - this.targetX) > 1){
-                    this.setVelocityX(-100);
-                } else {
-                    this.setVelocityX(0);
-                    this.x = this.targetX;
-                }
-                // console.log(this.state);
-            break;
-            case 'charge':{
-                this.setVelocityX(-500);
-                //this.scene.sound.play('sfx_EMovement');
-                //this.enemyMoveSound.play();
-            }
-            break;
-        }
+class IdleState extends State{
+    enter(scene, enemy){
+        // console.log('entered idle');
+        scene.time.delayedCall(Phaser.Math.Between(500, 2500), () => {enemy.FSM.transition('charging')});
+    }
+
+    execute(scene, enemy){
+
+    }
+
+    exit(scene, enemy){
+
+    }
+}
+
+class ChargingState extends State{
+    enter(scene, enemy){
+        console.log('charge');
+        enemy.setAccelerationX(enemy.acceleration);
+        enemy.setMaxVelocity(enemy.maxSpeed);
+    }
+
+    execute(scene, enemy){
+
+    }
+
+    exit(scene, enemy){
+
+    }
+}
+
+class ShootingState extends State{
+    enter(scene, enemy){
+
+    }
+
+    execute(scene, enemy){
+
+    }
+
+    exit(scene, enemy){
+
+    }
+}
+
+class HurtState extends State{
+    enter(scene, enemy){
+
+    }
+
+    execute(scene, enemy){
+
+    }
+
+    exit(scene, enemy){
+
+    }
+}
+
+class DeadState extends State{
+    enter(scene, enemy){
+
+    }
+
+    execute(scene, enemy){
+
+    }
+
+    exit(scene, enemy){
+
     }
 }

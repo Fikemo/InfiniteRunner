@@ -6,6 +6,9 @@ export default class Load extends Phaser.Scene {
     preload() {
         // set load path
         this.load.path = './assets/';
+
+        this.load.atlasXML('numbersAtlas', 'numbersSpriteSheet.png', 'sprites.xml');
+
         // take care of all of our asset loading now
         this.load.image('groundTile', 'groundTile.png');
 
@@ -87,6 +90,19 @@ export default class Load extends Phaser.Scene {
             frameRate: 12,
             repeat: 0,
         })
+
+        // this.anims.create({
+        //     key: 'numbers',
+        //     frames: this.anims.generateFrameNames('numberAtlas', {
+        //         prefix: 'number',
+        //         start: 0,
+        //         end: 9,
+        //         suffix: '',
+        //         zeroPad: 4,
+        //     }),
+        //     frameRate: 0,
+        //     repeat: 0,
+        // })
 
         // ...and pass to the next Scene
         this.scene.start('menuScene');

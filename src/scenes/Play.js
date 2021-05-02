@@ -3,6 +3,16 @@ import game from "../main.js";
 import Player from "../prefabs/Player.js";
 import Enemy from "../prefabs/Enemy.js";
 
+const gui = new dat.GUI();
+
+const BOTTOM_ENEMY_SPAWN_X = 960 - 50;
+const ENEMY_SPAWN_SEPERATION = 100;
+const ENEMY_SPAWN_X_VARIATION = 4;
+const ENEMY_SPAWN_Y = 480 - 32 - 50;
+
+let enemySpawnTimer = 4000;
+let maxEnemiesToSpawn = 1;
+
 export default class Play extends Phaser.Scene{
     // world constants
     SCORLL_SPEED;
@@ -40,6 +50,13 @@ export default class Play extends Phaser.Scene{
     }
 
     create(){
+        
+
+        let test_normalDistribution = new NormalDistribution();
+        console.log(test_normalDistribution);
+        console.log(test_normalDistribution.maxY);
+        console.log(test_normalDistribution.randomChance(Math.random() * 12 - 6));
+
         this.attackSound = this.sound.add('sfx_attack');
         this.playerInjuredSound = this.sound.add('sfx_injured');
         //this.enemyMoveSound = this.sound.add('sfx_EMovement');
@@ -93,17 +110,31 @@ export default class Play extends Phaser.Scene{
             this.filledHealth.push(this.add.image(healthbarPos.x +healthBarSegmentWidth * i + 8, healthbarPos.y + 4,'health_filled').setOrigin(0));
         }
 
+        this.scoreArray = [];
+        for (let i = 0; i < 10; i++){
+            this.scoreArray.push(this.add.sprite(healthbarPos.x + 40 * i, healthbarPos.y + 50, 'numbersAtlas', 'number0000').setOrigin(0).setFrame('number0002'));
+        }
+
         // add the enemy group
         this.enemyGroup = this.add.group({
             runChildUpdate: true,
         })
+        this.enemySpawnerGroup = this.add.group({
+            runChildUpdate: true,
+        })
+        let es1 = new EnemySpawnPoint(BOTTOM_ENEMY_SPAWN_X, ENEMY_SPAWN_Y, 1000);
+        let es2 = new EnemySpawnPoint(BOTTOM_ENEMY_SPAWN_X, ENEMY_SPAWN_Y - ENEMY_SPAWN_SEPERATION, 1000);
+        let es3 = new EnemySpawnPoint(BOTTOM_ENEMY_SPAWN_X, ENEMY_SPAWN_Y - ENEMY_SPAWN_SEPERATION * 2, 1000);
+        this.enemyGroup.add(new Enemy(this, 'enemy', es1, 1, false));
+        this.enemyGroup.add(new Enemy(this, 'enemy', es2, 1, false));
+        this.enemyGroup.add(new Enemy(this, 'enemy', es3, 1, false));
 
         // add dat.gui for debugging purposes
         // FIXME: Remove for the final build of the game
-        this.gui = new dat.GUI();
-        let playerFolder = this.gui.addFolder('Player Parameters');
+        let playerFolder = gui.addFolder('Player Parameters');
         playerFolder.add(this.player, 'currentHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
         playerFolder.add(this.player, 'maxHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
+        playerFolder.add(this.player, 'score', 0, 2000, 100);
         playerFolder.open();
     }
 
@@ -136,6 +167,7 @@ export default class Play extends Phaser.Scene{
 
     updateUI(){
         if (this.player.UINeedsUpdate){
+            console.log('updating ui');
             // console.log("Updating UI");
             for (let i = 0; i < this.backgroundHealth.length; i++){
                 if (i > this.player.maxHealth - 1){
@@ -150,6 +182,17 @@ export default class Play extends Phaser.Scene{
                     this.filledHealth[i].alpha = 0;
                 } else {
                     this.filledHealth[i].alpha = 1;
+                }
+            }
+
+            for (let i = 0; i < 10; i++){
+                let scoreString = String(this.player.score);
+                if (i < scoreString.length){
+                    let currentNumber = scoreString[i];
+                    this.scoreArray[i].setFrame(`number000${currentNumber}`);
+                    this.scoreArray[i].alpha = 1;
+                } else {
+                    this.scoreArray[i].alpha = 0;
                 }
             }
 
@@ -174,8 +217,8 @@ export default class Play extends Phaser.Scene{
 
     /**Create a new enemy and add it to this.enemyGroup() */
     addEnemy(){
-        let enemy = new Enemy(this, 'enemy');
-        this.enemyGroup.add(enemy);
+        // let enemy = new Enemy(this, 'enemy');
+        // this.enemyGroup.add(enemy);
     }
     /**
      * destroy the attacked enemy
@@ -185,5 +228,56 @@ export default class Play extends Phaser.Scene{
     //TODO: change it so that the enemy only takes damage when attacked and that it dies once its health is 0
     destroyEnemy(hitbox, enemy){
         enemy.destroy();
+    }
+}
+
+class NormalDistribution {
+    sigma;
+    mu;
+
+    maxX;
+    minX;
+
+    get maxY(){ return this.f(); }
+
+    constructor(sigma = 2, mu = 0, minX = -6, maxX = 6) {
+        this.sigma = sigma;
+        this.mu = mu;
+    }
+    /**Calculat the f(x) for a given value of x (sigma and mu are optional) */
+    f(x, sigma, mu){
+        if (!x) x = this.mu;
+        if (!sigma) sigma = this.sigma;
+        if (!mu) mu = this.mu;
+
+        let base = (1/(sigma * Math.sqrt(2 * Math.PI)));
+        let exponent = -(Math.pow(x - mu,2) / (2 * Math.pow(sigma, 2)))
+        let v = Math.pow(Math.E, exponent);
+        return base * v;
+        // return Math.pow(base, exponent);
+    }
+    /** For a given x value, return true if a random y value is less than or equal to the y value at x on the curve*/
+    randomChance(x){
+        let h = this.f(x)
+        let randomH = Math.random() * this.maxY;
+        // return randomH <= h;
+        return randomH <= h ? x : null;
+    }
+}
+
+class EnemySpawnPoint{
+    open;
+    x;
+    y;
+    spawnTimer;
+    constructor(x, y, spawnTimer){
+        this.x = x;
+        this.y = y;
+        this.spawnTimer = spawnTimer;
+        this.open = false;
+    }
+
+    update(){
+
     }
 }
