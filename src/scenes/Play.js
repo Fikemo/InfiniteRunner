@@ -1,69 +1,35 @@
 // imports
-import game from "../main.js";
 import Player from "../prefabs/Player.js";
 import Enemy from "../prefabs/Enemy.js";
-
-const gui = new dat.GUI();
-
-const BOTTOM_ENEMY_SPAWN_X = 960 - 50;
-const ENEMY_SPAWN_SEPERATION = 100;
-const ENEMY_SPAWN_X_VARIATION = 4;
-const ENEMY_SPAWN_Y = 480 - 32 - 50;
-
-let enemySpawnTimer = 4000;
-let maxEnemiesToSpawn = 1;
-
-const MAX_SCORE_DIGITS = 7;
+import game from "../main.js";
 
 export default class Play extends Phaser.Scene{
-    // world constants
-    SCORLL_SPEED;
-    TILE_SIZE;
-    DEBUG_MAX_PLAYER_HEALTH;
-
-    // enemy control
-    enemySpawnRate;
-    enemyCount;
-    maxEnemyCount;
-
-    // player control
-    /**@type {Phaser.Math.Vector2} */
-    playerSpawnPos;
-
     constructor(){
-        super ("playScene");
+        super('playScene');
     }
 
     init(){
-        this.SCORLL_SPEED = 5;
+        this.SCROLL_SPEED = 5;
         this.TILE_SIZE = 32;
         this.DEBUG_MAX_PLAYER_HEALTH = 10;
+    
+        this.MAX_SCORE_DIGITS = 7;
+        this.MAX_DIFFICULTY_SCORE = 5000;
+    
+        this.PLAYER_SPAWN_POS = new Phaser.Math.Vector2(120, this.scale.height / 2);
         
-        this.enemyCount = 0;
-        this.maxEnemyCount = 2;
-        this.playerSpawnX = 120;
-        this.playerSpawnY = this.scale.height / 2;
-        this.playerSpawnPos = new Phaser.Math.Vector2(120, this.scale.height / 2);
-    }
-
-    preload() {
-        console.log('play loaded');
-        // this.load.audio('sfx_attack', 'playerAttack.wav');
+        this.MAX_ENEMY_SPAWN_TIME = 4000;
+        this.MIN_ENEMY_SPAWN_TIME = 500;
+        
+        this.ENEMY_SPAWN_X = this.scale.width - 50;
+        this.ENEMY_SPAWN_X_VARIATION = 4;
+        this.BOTTOM_ENEMY_SPAWN_Y = this.scale.height - 32 - 50;
+        this.ENEMY_SPAWN_Y_SEPERATION = 100;
+        this.ENEMY_SPAWN_Y_VARIATION = 4;
+        this.maxActiveSpawners = 1;
     }
 
     create(){
-        
-
-        let test_normalDistribution = new NormalDistribution();
-        console.log(test_normalDistribution);
-        console.log(test_normalDistribution.maxY);
-        console.log(test_normalDistribution.randomChance(Math.random() * 12 - 6));
-
-        this.attackSound = this.sound.add('sfx_attack');
-        this.playerInjuredSound = this.sound.add('sfx_injured');
-        //this.enemyMoveSound = this.sound.add('sfx_EMovement');
-        this.enemyInjuredSound = this.sound.add('sfx_enemyInjured');
-        this.enemyDestroySound = this.sound.add('sfx_destroy');
         // add cursor buttons
         // TODO: Instead of using cursors, use space to jump and ASDF for other things
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -72,6 +38,86 @@ export default class Play extends Phaser.Scene{
         this.bgm = this.sound.add('bgm', {volume: 0.1, loop: true});
         this.bgm.play();
 
+        this.createBackground();
+
+        // create the player 🐱‍👤
+        this.player = new Player(this, this.PLAYER_SPAWN_POS.x, this.PLAYER_SPAWN_POS.y, 'ninja_run');
+        console.log(this.player);
+
+        // add collision between the player and the ground
+        this.physics.add.collider(this.player, this.groundHitbox);
+        
+        this.createUI();
+
+        // enemies
+        this.enemySpawnerArray = [];
+        this.enemySpawnerArray.push(new EnemySpawner(this, this.ENEMY_SPAWN_X, this.BOTTOM_ENEMY_SPAWN_Y));
+        this.enemySpawnerArray.push(new EnemySpawner(this, this.ENEMY_SPAWN_X, this.BOTTOM_ENEMY_SPAWN_Y - this.ENEMY_SPAWN_Y_SEPERATION));
+        this.enemySpawnerArray.push(new EnemySpawner(this, this.ENEMY_SPAWN_X, this.BOTTOM_ENEMY_SPAWN_Y - this.ENEMY_SPAWN_Y_SEPERATION * 2));
+
+        this.enemyGroup = this.add.group({ runChildUpdate: true });
+
+        this.beginEnemySpawning();
+
+        // add dat.gui for debugging purposes
+        // FIXME: Remove for the final build of the game
+        this.gui = new dat.GUI();
+        let playerFolder = this.gui.addFolder('Player Parameters');
+        playerFolder.add(this.player, 'currentHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
+        playerFolder.add(this.player, 'maxHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
+        playerFolder.add(this.player, 'score', 0, 5000, 50);
+        playerFolder.open();
+    }
+
+    update(time, delta){
+        // multiply everytyhing that is incremented every frame by deltaMultiplier
+        let deltaMultiplier = (delta/ ( 16 + 2/3 ));
+
+        // scroll the background
+        this.background01.tilePositionX += (this.SCROLL_SPEED * 0.9) * deltaMultiplier;
+        this.background02.tilePositionX += (this.SCROLL_SPEED * 0.6) * deltaMultiplier;
+        this.background03.tilePositionX += (this.SCROLL_SPEED * 0.3) * deltaMultiplier;
+        this.groundTiles.tilePositionX  += (this.SCROLL_SPEED      ) * deltaMultiplier;
+
+        // update the player
+        this.player.update();
+
+        // update the ui if it needs to
+        this.updateUI();
+
+        // update the enemy spawners
+        // this.enemySpawnerArray.forEach(spawner => {spawner.update()});
+
+        // check for enemy and player collision
+        this.physics.overlap(this.player.damageHitbox, this.enemyGroup, this.playerEnemyOverlap, null, this);
+    }
+
+    createUI() {
+        // create healthbar
+        let healthbarPos = new Phaser.Math.Vector2(32, 32);
+        let healthBarSegmentWidth = 40;
+        this.backgroundHealth = [];
+        for (let i = 0; i < this.DEBUG_MAX_PLAYER_HEALTH; i++) {
+            this.backgroundHealth.push(this.add.sprite(healthbarPos.x + healthBarSegmentWidth * i, healthbarPos.y, 'health_background').setOrigin(0));
+        }
+        this.emptyHealth = [];
+        for (let i = 0; i < this.DEBUG_MAX_PLAYER_HEALTH; i++) {
+            this.emptyHealth.push(this.add.sprite(healthbarPos.x + healthBarSegmentWidth * i + 8, healthbarPos.y + 4, 'health_empty').setOrigin(0));
+        }
+        this.filledHealth = [];
+        for (let i = 0; i < this.DEBUG_MAX_PLAYER_HEALTH; i++) {
+            this.filledHealth.push(this.add.sprite(healthbarPos.x + healthBarSegmentWidth * i + 8, healthbarPos.y + 4, 'health_filled').setOrigin(0));
+        }
+
+        // create score display
+        this.scoreArray = [];
+        for (let i = 0; i < this.MAX_SCORE_DIGITS; i++){
+            this.scoreArray.push(this.add.sprite(healthbarPos.x + (40 * i) + 624, healthbarPos.y, 'numbersAtlas', 'number0000').setOrigin(0));
+        }
+
+    }
+
+    createBackground(){
         // create the background in render order
         this.sky = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'sky').setOrigin(0);
         this.sun = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'evening_sun').setOrigin(0);
@@ -79,93 +125,15 @@ export default class Play extends Phaser.Scene{
         this.haze = this.add.tileSprite(0,0, this.scale.width, this.scale.height, 'haze').setOrigin(0);
         this.background02 = this.add.tileSprite(0,0,this.scale.width, this.scale.height,'background02').setOrigin(0);
         this.background01 = this.add.tileSprite(0,0,this.scale.width, this.scale.height,'background01').setOrigin(0);
-
+    
         // create the ground and tiles
         this.groundHitbox = this.physics.add.sprite(-5 * this.TILE_SIZE, this.scale.height - this.TILE_SIZE);
         this.groundHitbox.body.setImmovable(true);
         this.groundHitbox.body.setAllowGravity(false);
         this.groundHitbox.body.setSize(this.scale.width + 5 * this.TILE_SIZE, this.TILE_SIZE, false);
         this.groundHitbox.setOrigin(0);
-
+    
         this.groundTiles = this.add.tileSprite(0, this.scale.height - this.TILE_SIZE, this.scale.width, this.TILE_SIZE, 'groundTile').setOrigin(0);
-
-        // create the player 🐱‍👤
-        this.player = new Player(this, this.playerSpawnPos.x, this.playerSpawnPos.y, 'ninja_run');
-        console.log(this.player);
-
-        // add collision between the player and the ground
-        this.physics.add.collider(this.player, this.groundHitbox);
-
-        // create the healthbar
-        let healthbarPos = new Phaser.Math.Vector2(32,32);
-        let healthBarSegmentWidth = 40;
-        this.backgroundHealth = [];
-        for (let i = 0; i < this.DEBUG_MAX_PLAYER_HEALTH; i++){
-            this.backgroundHealth.push(this.add.image(healthbarPos.x +healthBarSegmentWidth * i, healthbarPos.y,'health_background').setOrigin(0));
-        }
-        this.emptyHealth = [];
-        for (let i = 0; i < this.DEBUG_MAX_PLAYER_HEALTH; i++){
-            this.emptyHealth.push(this.add.image(healthbarPos.x +healthBarSegmentWidth * i + 8, healthbarPos.y + 4,'health_empty').setOrigin(0));
-        }
-        this.filledHealth = [];
-        for (let i = 0; i < this.DEBUG_MAX_PLAYER_HEALTH; i++){
-            this.filledHealth.push(this.add.image(healthbarPos.x +healthBarSegmentWidth * i + 8, healthbarPos.y + 4,'health_filled').setOrigin(0));
-        }
-
-        // create score display
-        this.scoreArray = [];
-        for (let i = 0; i < MAX_SCORE_DIGITS; i++){
-            this.scoreArray.push(this.add.sprite(healthbarPos.x + (40 * i) + 624, healthbarPos.y, 'numbersAtlas', 'number0000').setOrigin(0));
-        }
-
-        // add the enemy group
-        this.enemyGroup = this.add.group({
-            runChildUpdate: true,
-        })
-        this.enemySpawnerGroup = this.add.group({
-            runChildUpdate: true,
-        })
-        let es1 = new EnemySpawnPoint(BOTTOM_ENEMY_SPAWN_X, ENEMY_SPAWN_Y, 1000);
-        let es2 = new EnemySpawnPoint(BOTTOM_ENEMY_SPAWN_X, ENEMY_SPAWN_Y - ENEMY_SPAWN_SEPERATION, 1000);
-        let es3 = new EnemySpawnPoint(BOTTOM_ENEMY_SPAWN_X, ENEMY_SPAWN_Y - ENEMY_SPAWN_SEPERATION * 2, 1000);
-        this.enemyGroup.add(new Enemy(this, 'enemy', es1, 1, false));
-        this.enemyGroup.add(new Enemy(this, 'enemy', es2, 1, false));
-        this.enemyGroup.add(new Enemy(this, 'enemy', es3, 1, false));
-
-        // add dat.gui for debugging purposes
-        // FIXME: Remove for the final build of the game
-        let playerFolder = gui.addFolder('Player Parameters');
-        playerFolder.add(this.player, 'currentHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
-        playerFolder.add(this.player, 'maxHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
-        playerFolder.add(this.player, 'score', 0, 2000, 50);
-        playerFolder.open();
-    }
-
-    update(time, delta){
-        // multiply that is incremented every frame by this to avoid differences between framerates
-        let deltaMultiplier = (delta/(16 + 2/3));
-
-        //scroll the background
-        this.background01.tilePositionX += (this.SCORLL_SPEED * 0.9) * deltaMultiplier;
-        this.background02.tilePositionX += (this.SCORLL_SPEED * 0.6) * deltaMultiplier;
-        this.background03.tilePositionX += (this.SCORLL_SPEED * 0.3) * deltaMultiplier;
-        this.groundTiles.tilePositionX  += (this.SCORLL_SPEED      ) * deltaMultiplier;
-
-        // update player
-        this.player.update();
-
-        // update the UI if the player's stats have changed
-        this.updateUI();
-
-        // run enemy spawn
-        if (this.enemyCount < this.maxEnemyCount){
-            this.addEnemy();
-            //this.enemyMoveSound.play();
-        }
-
-        //player enemy collision
-        this.physics.overlap(this.player.damageHitbox, this.enemyGroup, this.playerEnemyOverlap, null, this)
-        
     }
 
     updateUI(){
@@ -194,7 +162,7 @@ export default class Play extends Phaser.Scene{
             for (let i = 0; i < this.scoreArray.length - origLength; i++){
                 scoreString = "0" + scoreString;
             }
-            if (scoreString.length > MAX_SCORE_DIGITS){
+            if (scoreString.length > this.MAX_SCORE_DIGITS){
                 scoreString = "9999999";
             }
             for (let i = 0; i < this.scoreArray.length; i++){
@@ -213,84 +181,148 @@ export default class Play extends Phaser.Scene{
             this.player.UINeedsUpdate = false;
         }
     }
-    /**
-     * When an enemy overlaps with the player (probably just hurts the player)
-     * @param {Enemy} player 
-     * @param {Player} enemy 
-     */
-    playerEnemyOverlap(player, enemy){
-        // first check to make sure that the player is not already overlapping the player
-        // and that the player is not invincible
-        if (!enemy.alreadyOverlapping && !player.invincible){
-            this.player.FSM.transition('hurt', enemy);
-            // enemy.body.setEnable(false);
+
+    playerEnemyOverlap(playerDamageHitbox, enemy){
+
+    }
+
+    beginEnemySpawning(){
+        const {enemyDifficulty, spawnInterval, activeSpawnersAmount} = this.calculateDifficulty();
+        this.maxActiveSpawners = activeSpawnersAmount;
+        this.setActiveSpawners();
+    }
+
+    setActiveSpawners(){
+        let totalActive = 0;
+        this.enemySpawnerArray.forEach(spawner => {if (spawner.active) totalActive++});
+        console.log(this.maxActiveSpawners);
+
+        while(totalActive < this.maxActiveSpawners){
+            let i = Phaser.Math.Between(0,this.enemySpawnerArray.length - 1);
+            let currentSpawner = this.enemySpawnerArray[i];
+            if(!currentSpawner.active){
+                currentSpawner.active = true;
+                currentSpawner.spawnEnemy();
+                totalActive++;
+            }
         }
-        enemy.alreadyOverlapping = true;
     }
 
-    /**Create a new enemy and add it to this.enemyGroup() */
-    addEnemy(){
-        // let enemy = new Enemy(this, 'enemy');
-        // this.enemyGroup.add(enemy);
+    calculateDifficulty(){
+        let mu = Phaser.Math.Clamp((this.player.score / this.MAX_DIFFICULTY_SCORE) * 12 - 6, -6, 6);
+
+        // search for a x value until its correspoding y value is on or below the line
+        let randomX = this.randomBetween(-6, 6);
+        while(!this.normalDisRandomChance(randomX, mu)){
+            randomX = this.randomBetween(-6, 6);
+        }
+
+        // thresholds for enemy difficutly
+        // easy < -2
+        // -2 <= medium < 2
+        // 2 <= hard
+        let enemyDifficulty;
+        if (randomX < -2){
+            enemyDifficulty = "easy";
+        } else if (randomX >= -2 && randomX < 2){
+            enemyDifficulty = "medium";
+        } else {
+            enemyDifficulty = "hard";
+        }
+
+        // thresholds for spawn intervals
+        // -6 <= first phase < -2
+        // -2 <= second phase < 2
+        // 2 <= third phase < 6
+        let spawnInterval;
+        if (mu < -2){
+            spawnInterval = Math.max((1 - this.ratioBetween(mu, -6, -2)) * this.MAX_ENEMY_SPAWN_TIME, this.MIN_ENEMY_SPAWN_TIME);
+        } else if (mu >= -2 && mu < 2){
+            spawnInterval = Math.max((1 - this.ratioBetween(mu, -2, 2)) * this.MAX_ENEMY_SPAWN_TIME, this.MIN_ENEMY_SPAWN_TIME);
+        } else {
+            spawnInterval = Math.max((1 - this.ratioBetween(mu, 2, 6)) * this.MAX_ENEMY_SPAWN_TIME, this.MIN_ENEMY_SPAWN_TIME);
+        }
+
+        let activeSpawnersAmount;
+        // thresholds for active spawn points
+        // -6 <= one < -5
+        // -5 <= two < -3
+        // -3 <= three < -2
+        // -2 <= two < 0
+        // 0 <= three < 2
+        // 2 <= two < 4
+        // 4 <= three < 6
+        if (mu < -5){
+            activeSpawnersAmount = 1;
+        } else if ((mu >= -5 && mu < -3) || (mu >= -2 && mu < 0) || (mu >= 2 && mu < 4)){
+            activeSpawnersAmount = 2;
+        } else {
+            activeSpawnersAmount = 3;
+        }
+
+        return {enemyDifficulty, spawnInterval, activeSpawnersAmount}
     }
-    /**
-     * destroy the attacked enemy
-     * @param {Phaser.Physics.Arcade.Sprite} hitbox 
-     * @param {Enemy} enemy 
-     */
-    //TODO: change it so that the enemy only takes damage when attacked and that it dies once its health is 0
-    destroyEnemy(hitbox, enemy){
-        enemy.destroy();
+
+    randomBetween(min, max){
+        return Math.random() * (max - min) + min;
     }
-}
 
-class NormalDistribution {
-    sigma;
-    mu;
-
-    maxX;
-    minX;
-
-    get maxY(){ return this.f(); }
-
-    constructor(sigma = 2, mu = 0, minX = -6, maxX = 6) {
-        this.sigma = sigma;
-        this.mu = mu;
+    /**Returns a number between 0 and 1 for where x falls in a range between a min and a max value*/
+    ratioBetween(x, min, max){
+        return (x-min) / (max-min);
     }
-    /**Calculat the f(x) for a given value of x (sigma and mu are optional) */
-    f(x, sigma, mu){
-        if (!x) x = this.mu;
-        if (!sigma) sigma = this.sigma;
-        if (!mu) mu = this.mu;
 
-        let base = (1/(sigma * Math.sqrt(2 * Math.PI)));
+    normalDis(x, mu = 0, sigma = 2){
+        if (!x) x = mu;
+
+        let a = (1/(sigma * Math.sqrt(2 * Math.PI)));
         let exponent = -(Math.pow(x - mu,2) / (2 * Math.pow(sigma, 2)))
-        let v = Math.pow(Math.E, exponent);
-        return base * v;
-        // return Math.pow(base, exponent);
+        let b = Math.pow(Math.E, exponent);
+        let result = a * b
+        return result;
     }
-    /** For a given x value, return true if a random y value is less than or equal to the y value at x on the curve*/
-    randomChance(x){
-        let h = this.f(x)
-        let randomH = Math.random() * this.maxY;
-        // return randomH <= h;
-        return randomH <= h ? x : null;
+
+    normalDisMaxY(mu = 0, sigma = 2){
+        return this.normalDis(mu, mu, sigma);
+    }
+
+    normalDisRandomChance(x, mu = 0, sigma = 2){
+        let h = this.normalDis(x, mu, sigma);
+        let randomH = Math.random() * this.normalDisMaxY(mu, sigma);
+        return randomH <= h;
     }
 }
 
-class EnemySpawnPoint{
-    open;
-    x;
-    y;
-    spawnTimer;
-    constructor(x, y, spawnTimer){
+class EnemySpawner{
+    constructor(scene, x, y){
+        this.active = false;
+        this.open = true;
+        this.scene = scene;
         this.x = x;
         this.y = y;
-        this.spawnTimer = spawnTimer;
-        this.open = false;
     }
 
     update(){
+        if (this.active && this.open){
 
+        }
+    }
+
+    spawnEnemy(){
+        let {enemyDifficulty, spawnInterval, activeSpawnersAmount} = this.scene.calculateDifficulty();
+        this.scene.maxActiveSpawners = activeSpawnersAmount;
+        
+        this.scene.time.delayedCall(spawnInterval, ()=>{
+            this.scene.enemyGroup.add(
+                new Enemy(this.scene, `enemy_${enemyDifficulty}`, this, enemyDifficulty)
+            )
+        })
+        this.open = false;
+    }
+
+    deactivate(){
+        this.active = false;
+        this.open = true;
+        this.scene.setActiveSpawners();
     }
 }

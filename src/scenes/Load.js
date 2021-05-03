@@ -27,7 +27,9 @@ export default class Load extends Phaser.Scene {
         this.load.image('title', 'Title.png');
 
         this.load.image('enemy', 'enemy.png');
-        this.load.image('heart', 'hud_heartFull.png');
+        this.load.image('enemy_easy', 'enemy_easy.png');
+        this.load.image('enemy_medium', 'enemy_medium.png');
+        this.load.image('enemy_hard', 'enemy_hard.png');
         this.load.audio('sfx_attack', 'playerAttack.wav');
         this.load.audio('sfx_injured', 'playerOof.wav');
         this.load.audio('sfx_EMovement', 'enemyStrollin.wav');

@@ -1,7 +1,7 @@
 import { State, StateMachine } from "../../lib/StateMachine.js";
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, texture, spawner, difficutly, shootLaser){
+    constructor(scene, texture, spawner, difficutly){
         super (
             scene,
             scene.scale.width + 32,
@@ -13,6 +13,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             arriving: new ArrivingState(),
             idle: new IdleState(),
             charging: new ChargingState(),
+            dead: new DeadState(),
         },[scene, this]);
         this.spawner = spawner;
 
@@ -88,7 +89,9 @@ class ChargingState extends State{
     }
 
     execute(scene, enemy){
-
+        if (enemy.x < - enemy.width){
+            enemy.FSM.transition('dead');
+        }
     }
 
     exit(scene, enemy){
@@ -126,7 +129,8 @@ class HurtState extends State{
 
 class DeadState extends State{
     enter(scene, enemy){
-
+        enemy.spawner.deactivate();
+        enemy.destroy();
     }
 
     execute(scene, enemy){
