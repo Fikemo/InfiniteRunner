@@ -21,10 +21,39 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
         this.body.setAllowGravity(false);
         this.setCircle((this.width / 2) - 2, 2, 2);
-        // this.setOrigin(0.5);
 
-        this.acceleration = -2000;
-        this.maxSpeed = 500;
+        switch (difficutly){
+            case 'easy':
+                this.acceleration = -2000;
+                this.maxSpeed = 500;
+                this.minIdleTime = 1000;
+                this.maxIdleTime = 3000;
+                this.health = 1;
+                this.damage = 1;
+                this.pointValue = 100;
+                this.hurtStateVelocity = -200;
+            break;
+            case 'medium':
+                this.acceleration = -3000;
+                this.maxSpeed = 700;
+                this.minIdleTime = 500;
+                this.maxIdleTime = 3000;
+                this.health = 2;
+                this.damage = 1;
+                this.pointValue = 150;
+                this.hurtStateVelocity = -200;
+            break;
+            case 'hard':
+                this.acceleration = -4000;
+                this.maxSpeed = 900;
+                this.minIdleTime = 500;
+                this.maxIdleTime = 1500;
+                this.health = 3;
+                this.damage = 2;
+                this.pointValue = 200;
+                this.hurtStateVelocity = -200;
+            break;
+        }
         
     }
 
@@ -69,7 +98,7 @@ class ArrivingState extends State{
 class IdleState extends State{
     enter(scene, enemy){
         // console.log('entered idle');
-        scene.time.delayedCall(Phaser.Math.Between(500, 2500), () => {enemy.FSM.transition('charging')});
+        scene.time.delayedCall(Phaser.Math.Between(enemy.minIdleTime, enemy.maxIdleTime), () => {enemy.FSM.transition('charging')});
     }
 
     execute(scene, enemy){
@@ -90,7 +119,7 @@ class ChargingState extends State{
 
     execute(scene, enemy){
         if (enemy.x < - enemy.width){
-            enemy.FSM.transition('dead');
+            enemy.FSM.transition('dead', false);
         }
     }
 
@@ -115,7 +144,8 @@ class ShootingState extends State{
 
 class HurtState extends State{
     enter(scene, enemy){
-
+        this.setAccelerationX(0);
+        this.setVelocityX(enemy.hurtStateVelocity);
     }
 
     execute(scene, enemy){
@@ -128,8 +158,9 @@ class HurtState extends State{
 }
 
 class DeadState extends State{
-    enter(scene, enemy){
+    enter(scene, enemy, killByPlayer){
         enemy.spawner.deactivate();
+        if (killByPlayer) scene.player.score += enemy.pointValue;
         enemy.destroy();
     }
 

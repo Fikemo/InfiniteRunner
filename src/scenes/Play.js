@@ -18,8 +18,8 @@ export default class Play extends Phaser.Scene{
     
         this.PLAYER_SPAWN_POS = new Phaser.Math.Vector2(120, this.scale.height / 2);
         
-        this.MAX_ENEMY_SPAWN_TIME = 4000;
-        this.MIN_ENEMY_SPAWN_TIME = 500;
+        this.MAX_ENEMY_SPAWN_TIME = 2000;
+        this.MIN_ENEMY_SPAWN_TIME = 250;
         
         this.ENEMY_SPAWN_X = this.scale.width - 50;
         this.ENEMY_SPAWN_X_VARIATION = 4;
@@ -195,7 +195,6 @@ export default class Play extends Phaser.Scene{
     setActiveSpawners(){
         let totalActive = 0;
         this.enemySpawnerArray.forEach(spawner => {if (spawner.active) totalActive++});
-        console.log(this.maxActiveSpawners);
 
         while(totalActive < this.maxActiveSpawners){
             let i = Phaser.Math.Between(0,this.enemySpawnerArray.length - 1);
