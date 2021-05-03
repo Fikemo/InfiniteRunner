@@ -1,4 +1,6 @@
 import Menu from "./scenes/Menu.js";
+import Instructions from "./scenes/Instructions.js";
+import Credits from "./scenes/Credits.js";
 import Play from "./scenes/Play.js";
 import Load from "./scenes/Load.js";
 
@@ -7,7 +9,7 @@ let config = {
     type: Phaser.AUTO,
     width: 960,
     height: 480,
-    scene: [Load, Menu, Play],
+    scene: [Load, Menu, Instructions, Credits, Play],
     scale: {
         // mode: Phaser.Scale.FIT,
         // autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -26,9 +28,9 @@ let config = {
     fps: 60,
 }
 
-
-//let game;
+//let game
 let game  = new Phaser.Game(config);
+
 
 //export default game = new Phaser.Game(config);
 
@@ -37,5 +39,5 @@ let game  = new Phaser.Game(config);
 let borderUISize = game.config.height / 15;
 let borderPadding = borderUISize / 3;
 */
-
+let keyLeft;
 export default game;

@@ -21,6 +21,7 @@ export default class Menu extends Phaser.Scene{
                 bottom: 5,
             },
             fixedWidth: 0
+       
         }
 
         this.add.image(500, 1280, 'logo');
@@ -30,10 +31,22 @@ export default class Menu extends Phaser.Scene{
         this.add.image(this.scale.width / 2, this.scale.height / 2 - 54,'title').setOrigin(0.5);
 
 
-        this.input.on('pointerdown', () => this.scene.start('playScene'));
+        //this.input.on('pointerdown', () => this.scene.start('playScene'));
+        //this.input.on('pointerdown', () => this.scene.start('creditScene'));
+        this.input.on('pointerdown', () => this.scene.start('instructionScene'));
+       //keyLEFT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
     }
 
     update(){
-
+        //this.scene.start('creditScene');
+        //this.scene.start('menuScene');
+        //this.scene.start('creditScene');
+       /* if (Phaser.Input.Keyboard.JustDown(keyLEFT)) {
+            // Novice mode
+            //this.sound.play('sfx_select');
+            this.scene.start("creditScene");    
+          }
+    */
     }
 }
+        //this.input.on('pointerdown', () => this.scene.start('InstructionScene'));
