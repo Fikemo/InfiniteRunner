@@ -41,11 +41,11 @@ export default class Load extends Phaser.Scene {
             endFrame: 11
         });
 
-        this.load.spritesheet('ninja_run', 'NinjaRun.png', {
-            frameWidth: 70,
-            frameHeight: 80,
+        this.load.spritesheet('ninja_run', 'ninjarun.png', {
+            frameWidth: 80,
+            frameHeight: 92,
             startFrame: 0,
-            endFrame: 5,
+            endFrame: 7,
         })
 
         this.load.spritesheet('ninja_jump', 'NinjaJump.png', {
