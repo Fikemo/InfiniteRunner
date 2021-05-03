@@ -24,8 +24,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         switch (difficutly){
             case 'easy':
-                this.acceleration = -2000;
-                this.maxSpeed = 500;
+                this.acceleration = -3000;
+                this.maxSpeed = 700;
                 this.minIdleTime = 1000;
                 this.maxIdleTime = 3000;
                 this.health = 1;
@@ -34,8 +34,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
                 this.hurtStateVelocity = -200;
             break;
             case 'medium':
-                this.acceleration = -3000;
-                this.maxSpeed = 700;
+                this.acceleration = -4000;
+                this.maxSpeed = 900;
                 this.minIdleTime = 500;
                 this.maxIdleTime = 3000;
                 this.health = 2;
@@ -45,11 +45,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             break;
             case 'hard':
                 this.acceleration = -4000;
-                this.maxSpeed = 900;
+                this.maxSpeed = 1100;
                 this.minIdleTime = 500;
                 this.maxIdleTime = 1500;
                 this.health = 3;
-                this.damage = 2;
+                this.damage = 1;
                 this.pointValue = 200;
                 this.hurtStateVelocity = -200;
             break;
@@ -112,7 +112,6 @@ class IdleState extends State{
 
 class ChargingState extends State{
     enter(scene, enemy){
-        console.log('charge');
         enemy.setAccelerationX(enemy.acceleration);
         enemy.setMaxVelocity(enemy.maxSpeed);
     }

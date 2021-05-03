@@ -1,7 +1,6 @@
 // imports
 import Player from "../prefabs/Player.js";
 import Enemy from "../prefabs/Enemy.js";
-import game from "../main.js";
 
 export default class Play extends Phaser.Scene{
     constructor(){
@@ -33,6 +32,8 @@ export default class Play extends Phaser.Scene{
         // add cursor buttons
         // TODO: Instead of using cursors, use space to jump and ASDF for other things
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.keySlash = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+        // console.log(this.keySlash);
 
         // play bgm
         this.bgm = this.sound.add('bgm', {volume: 0.1, loop: true});
@@ -81,12 +82,10 @@ export default class Play extends Phaser.Scene{
 
         // update the player
         this.player.update();
+        this.physics.overlap(this.player.attackHitbox, this.enemyGroup, this.attackEnemyOverlap, null, this);
 
         // update the ui if it needs to
         this.updateUI();
-
-        // update the enemy spawners
-        // this.enemySpawnerArray.forEach(spawner => {spawner.update()});
 
         // check for enemy and player collision
         this.physics.overlap(this.player.damageHitbox, this.enemyGroup, this.playerEnemyOverlap, null, this);
@@ -183,7 +182,17 @@ export default class Play extends Phaser.Scene{
     }
 
     playerEnemyOverlap(playerDamageHitbox, enemy){
+        // first check to make sure that the player is not already overlapping the player and that the player is not invincible
+        // and that the player's attack isn't currently active
+        if (!enemy.alreadyOverlapping){
+            console.log('player enemy overlap')
+            this.player.takeDamage(enemy.damage);
+        }
+        enemy.alreadyOverlapping = true;
+    }
 
+    attackEnemyOverlap(playerAttackHitbox, enemy){
+        
     }
 
     beginEnemySpawning(){
