@@ -4,6 +4,7 @@ export default class Load extends Phaser.Scene {
     }
 
     preload() {
+        
         // set load path
         this.load.path = './assets/';
 
@@ -107,6 +108,6 @@ export default class Load extends Phaser.Scene {
         // })
 
         // ...and pass to the next Scene
-        this.scene.start('menuScene');
+        this.scene.start('creditScene');
     }
 }
