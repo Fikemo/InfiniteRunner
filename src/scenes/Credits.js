@@ -28,7 +28,7 @@ export default class Credits extends Phaser.Scene{
 
         //add text
         this.add.text(game.config.width/2, game.config.height/2 + 190, 'Sound Design: Emersen Lorenz', instructConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 160, 'Art and Animation: Marla Deleon & Aubrey Schelbauer', instructConfig).setOrigin(0.5);
+        this.add.text(game.config.width/2, game.config.height/2 + 160, 'Art and Animation: Marla De Leon & Aubrey Schelbauer', instructConfig).setOrigin(0.5);
         this.add.text(game.config.width/2, game.config.height/2 + 120, 'Programming: Finn Morrison & Emersen Lorenz ', instructConfig).setOrigin(0.5);
         this.add.text(game.config.width/2, game.config.height/2 + 90, 'Creator Credits', instructConfig).setOrigin(0.5);
         this.add.text(game.config.width/2, game.config.height/2 + 5, 'Joppyshrek Productions Presents', instructConfig).setOrigin(0.5);
