@@ -1,4 +1,4 @@
-<head>
+/*
     Creators: Finn Morrison, Emersen Lorenz, Marla De Leon, Aubrey Schelbauer
     Title: "Desert Ninja"
     Completed: 5/4/21
@@ -14,7 +14,7 @@
     adding more to asethic of the game. The paralx scrolling also increases its speed the further the player progresses and the more points they earn. 
     We are very proud of our custom designed soundtrack, sfx and animations created to make the game feel cohesive and visual interesting.
     This was the first time for most of us creating pixel art so we are proud of what we were able to learn and accomplish for this project.
-</head>
+*/
 
 
 import Menu from "./scenes/Menu.js";
