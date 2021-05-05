@@ -4,15 +4,17 @@
     Completed: 5/4/21
     Creative Tilt: 
     (Technical)
-    We incorportaed and calculated for our game to have an increasing difficulty
-    based on the amount of points the player accumulates over time using a bell curve. 
-    This system will determine how many of each type of enemy will spawn as the game progresses,
-    for example, less points means easier enemies are more likely to spawn, while a lot of points will increase the chances of harder enemies to spawn.
-    We were also able to implement state machines for both the player actions and enemy actions, allowing us use state changes for every important event.
+    The game's difficulty increases as the player's score increases.
+    This is calculated using a shifiting normal distribution equation which would look like a bell curve on a graph.
+    As the score increases, the chances of harder enemies spawning increases.
+    This creates a dynamic flow between the different types of enemies, where easier enemies are smoothly phased out and replaced with easier ones.
+    The player's score also changes how many enemy spawning points are active, how quickly enemies can spawn, and the speed of the background and rock obstacles.
+    We implemented state machines both fore the player and the enemies which allowed us easier control over their behavior.
     (Visual)
-    Tweens were added to make the enemies bob up and down to make them look like they were hovering in the air,
-    adding more to asethic of the game. The paralx scrolling also increases its speed the further the player progresses and the more points they earn. 
+    Tweens were added to make the enemies smoothly come in from off screen and bob up and down to make them look like they were hovering in the air,
+    adding more to asethic of the game. The parallax scrolling also increases its speed the further the player progresses and the more points they earn. 
     We are very proud of our custom designed soundtrack, sfx and animations created to make the game feel cohesive and visual interesting.
+    The pixel art was scaled up by a factor of 4 so that it would look and flow smoothly as every "pixel" in the art is actually 16 pixels.
     This was the first time for most of us creating pixel art so we are proud of what we were able to learn and accomplish for this project.
 */
 
