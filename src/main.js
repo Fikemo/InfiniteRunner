@@ -13,7 +13,7 @@
     (Visual)
     Tweens were added to make the enemies smoothly come in from off screen and bob up and down to make them look like they were hovering in the air,
     adding more to asethic of the game. The parallax scrolling also increases its speed the further the player progresses and the more points they earn. 
-    We are very proud of our custom designed soundtrack, sfx and animations created to make the game feel cohesive and visual interesting.
+    We are very proud of our original soundtrack, sfx and animations created to make the game feel cohesive and visually interesting.
     The pixel art was scaled up by a factor of 4 so that it would look and flow smoothly as every "pixel" in the art is actually 16 pixels.
     This was the first time for most of us creating pixel art so we are proud of what we were able to learn and accomplish for this project.
 */
