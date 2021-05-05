@@ -5,22 +5,15 @@ export default class Menu extends Phaser.Scene{
         super("menuScene");
     }
 
-    preload() {
-        //this.load.image('logo', './assets/spirals.png');
-        this.load.image('background', './assets/background01.png');
-        this.load.image('background2', './assets/background02.png');
-        this.load.image('background3', './assets/background03.png');
-        this.load.image('sun', './assets/evening_sun.png');
-        this.load.image('sky', './assets/sky.png');
-    }
-
     create(){
+        this.keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+        this.cursors = this.input.keyboard.createCursorKeys();
         let menuConfig = {
             fontFamily: 'Courier',
             fontSize: '28px',
             //backgroundColor: '#A3C941',
             color: '#ffffff',
-            aline: 'center',
+            align: 'center',
             padding: {
                 top: 5,
                 bottom: 5,
@@ -30,19 +23,23 @@ export default class Menu extends Phaser.Scene{
         }
         this.add.image(this.scale.width/2, this.scale.height / 2,'sky');
         this.add.image(this.scale.width/2, this.scale.height / 2,'sun');
-        this.add.image(this.scale.width/2, this.scale.height / 2,'background3');
-        this.add.image(this.scale.width/2, this.scale.height / 2,'background2');
-        this.add.image(this.scale.width/2, this.scale.height / 2,'background');
+        this.add.image(this.scale.width/2, this.scale.height / 2,'background03');
+        this.add.image(this.scale.width/2, this.scale.height / 2,'background02');
+        this.add.image(this.scale.width/2, this.scale.height / 2,'background01');
+
+        this.bgm = this.sound.add('startMenu_bgm', {volume: 0.1, loop: true});
+        this.bgm.play();
         
 
-        this.add.text(game.config.width/2, game.config.height/2 + 120, 'Click to Start', menuConfig).setOrigin(0.5);
+        this.add.text(game.config.width/2, game.config.height/2 + 120, 'Press SPACE to Start', menuConfig).setOrigin(0.5);
 
         this.add.image(this.scale.width / 2, this.scale.height / 2 - 54,'title').setOrigin(0.5);
 
 
         //this.input.on('pointerdown', () => this.scene.start('playScene'));
         //this.input.on('pointerdown', () => this.scene.start('creditScene'));
-        this.input.on('pointerdown', () => this.scene.start('instructionScene'));
+        //this.input.on('pointerdown', () => this.scene.start('instructionScene'));
+        this.cursors.space.on('down', () => {this.scene.start('instructionScene', this.bgm)});
     
     }
 

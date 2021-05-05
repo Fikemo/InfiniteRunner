@@ -6,22 +6,20 @@ export default class Instructions extends Phaser.Scene{
         super("instructionScene");
     }
 
-    preload() {
-        this.load.image('logo', './assets/spirals.png');
-        this.load.image('background', './assets/background01.png');
-        this.load.image('background2', './assets/background02.png');
-        this.load.image('background3', './assets/background03.png');
-        this.load.image('sun', './assets/evening_sun.png');
-        this.load.image('sky', './assets/sky.png');
+    init(data){
+        this.bgm = data;
     }
-
+    
     create(){
+        this.keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+        this.cursors = this.input.keyboard.createCursorKeys();
+
         let instructConfig = {
             fontFamily: 'Courier',
             fontSize: '28px',
-            //backgroundColor: '#A3C941',
+            backgroundColor: '#666666',
             color: '#FFFFFF',
-            aline: 'center',
+            align: 'center',
             padding: {
                 top: 5,
                 bottom: 5,
@@ -30,18 +28,18 @@ export default class Instructions extends Phaser.Scene{
         }
         this.add.image(this.scale.width/2, this.scale.height / 2,'sky');
         this.add.image(this.scale.width/2, this.scale.height / 2,'sun');
-        this.add.image(this.scale.width/2, this.scale.height / 2,'background3');
-        this.add.image(this.scale.width/2, this.scale.height / 2,'background2');
-        this.add.image(this.scale.width/2, this.scale.height / 2,'background');
+        this.add.image(this.scale.width/2, this.scale.height / 2,'background03');
+        this.add.image(this.scale.width/2, this.scale.height / 2,'background02');
+        this.add.image(this.scale.width/2, this.scale.height / 2,'background01');
 
-        this.add.text(game.config.width/2, game.config.height/2 + 160, 'Destory as many enemy Robots as you can', instructConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 120, 'Click Space bar to jump', instructConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 90, 'Click F to attack', instructConfig).setOrigin(0.5);
+        this.add.text(game.config.width/2, game.config.height/2, 'Press F to attack\nPress SPACE to jump\nDestroy as many enmy robots as you can.\nAvoid incoming rocks\n\nPress SPACE to continue', instructConfig).setOrigin(0.5);
 
         //this.add.image(this.scale.width / 2, this.scale.height / 2 - 54,'title').setOrigin(0.5);
 
 
-        this.input.on('pointerdown', () => this.scene.start('playScene'));
+        // this.input.on('pointerdown', () => this.scene.start('playScene'));
+        this.cursors.space.on('down', () => {this.bgm.stop(); this.scene.start('playScene')});
+        
     }
 
     update(){

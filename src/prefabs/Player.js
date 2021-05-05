@@ -59,8 +59,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        this.currentHealth = 2;
-        this.maxHealth = 2;
+        this.currentHealth = 3;
+        this.maxHealth = 3;
         this.UINeedsUpdate = true;
 
         this.FSM = new StateMachine('running', {
@@ -72,10 +72,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
             dead: new DeadState(),
         },[scene, this]);
 
+        this.sfx_attack = scene.sound.add('sfx_attack', {volume: 0.1});
+        this.sfx_hurt = scene.sound.add('sfx_injured', {volume: 0.2});
+
         // this.attackHitbox = new PlayerAttackHitbox(scene, x + this.width, y + this.height);
-        this.attackHitbox = new PlayerSecondaryHitbox(scene, this, x + this.width, y + this.height, 50, 70, this.body.width,this.body.height - (this.body.halfHeight + 70 / 2));
+        this.attackHitbox = new PlayerSecondaryHitbox(scene, this, x + this.width, y + this.height, 40, 84, this.body.width,this.body.height - (this.body.halfHeight + 84 / 2), undefined, 'slash');
         this.attackHitbox.attacking = false;
-        this.damageHitbox = new PlayerSecondaryHitbox(scene, this, x, y, 40, 40, this.body.halfWidth - 20, this.body.halfHeight - 20, 0x0000FF);
+        this.attackHitbox.successfulHit = false;
+        this.attackHitbox.alpha = 0;
+        this.damageHitbox = new PlayerSecondaryHitbox(scene, this, x, y, 40, 60, this.body.halfWidth - 8, this.body.halfHeight - 30, 0x0000FF);
 
         this.grounded = false;
         this.invincible = false;
@@ -106,8 +111,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
 }
 
 class PlayerSecondaryHitbox extends Phaser.Physics.Arcade.Sprite{
-    constructor(scene, player, x, y, width, height, xOffset, yOffset, debugBodyColor = 0xFF0000){
-        super(scene, x, y);
+    constructor(scene, player, x, y, width, height, xOffset, yOffset, debugBodyColor = 0xFF0000, texture){
+        super(scene, x, y, texture);
         this.player = player;
         this.xOffset = xOffset;
         this.yOffset = yOffset;
@@ -129,7 +134,7 @@ class PlayerSecondaryHitbox extends Phaser.Physics.Arcade.Sprite{
 class RunningState extends State {
     enter(scene, player){
         // console.log('running');
-        player.anims.play('ninja_run', true);
+        player.anims.play('run', true);
         if (player.invincible){
             this.invincibleTimer = scene.time.delayedCall(INVINCIBILITY_TIME, () =>{ player.invincible = false; });
         }
@@ -164,7 +169,7 @@ class RunningState extends State {
 class JumpingState extends State {
     enter(scene, player){
         // console.log('jumping');
-        player.anims.play('ninja_jump');
+        player.anims.play('jump');
     }
 
     execute(scene, player){
@@ -200,6 +205,18 @@ class JumpingState extends State {
 class AttackingState extends State {
     enter(scene, player){
         player.attackHitbox.attacking = true;
+        player.anims.play('attack_2', false);
+        player.sfx_attack.play();
+        player.attackHitbox.alpha = 1;
+        player.attackHitbox.anims.play('slash', false);
+        scene.time.delayedCall(100, () => {player.attackHitbox.attacking = false});
+        player.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'attack_2', () => {
+            this.deactivate(scene, player);
+            scene.time.delayedCall(250, () => {player.FSM.transition('running')});
+        })
+        player.attackHitbox.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            player.attackHitbox.alpha = 0;
+        })
     }
 
     execute(scene, player){
@@ -207,13 +224,28 @@ class AttackingState extends State {
     }
 
     exit(scene, player){
-        player.attackingHitbox.attacking = false;
+        this.deactivate(scene, player);
+    }
+
+    deactivate(scene, player){
+        player.attackHitbox.attacking = false;
     }
 }
 
 class AttackingInAirState extends State {
     enter(scene, player){
-
+        player.attackHitbox.attacking = true;
+        player.anims.play('attack_2', false);
+        player.sfx_attack.play();
+        player.attackHitbox.alpha = 1;
+        player.attackHitbox.anims.play('slash', false);
+        player.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            this.deactivate(scene, player);
+            scene.time.delayedCall(250, () => {player.FSM.transition('running')});
+        })
+        player.attackHitbox.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            player.attackHitbox.alpha = 0;
+        })
     }
 
     execute(scene, player){
@@ -222,6 +254,10 @@ class AttackingInAirState extends State {
 
     exit(scene, player){
         
+    }
+
+    deactivate(scene, player){
+        player.attackHitbox.attacking = false;
     }
 }
 
@@ -232,6 +268,9 @@ class HurtState extends State {
         this.recovered = false;
         this.touchedDown = player.body.touching.down;
         this.timerStarted = false;
+        player.anims.play('hurt');
+
+        player.alpha = 0.5;
     }
 
     execute(scene, player){

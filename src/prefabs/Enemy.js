@@ -8,50 +8,59 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             spawner.y,
             texture
         )
+        this.difficutly = difficutly;
 
         this.FSM = new StateMachine('arriving',{
             arriving: new ArrivingState(),
             idle: new IdleState(),
             charging: new ChargingState(),
+            hurt: new HurtState(),
             dead: new DeadState(),
         },[scene, this]);
         this.spawner = spawner;
+
+        this.sfx_destroy = scene.sound.add('sfx_destroy', {volume: 0.2});
+        this.sfx_charge = scene.sound.add('sfx_charge');
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
         this.body.setAllowGravity(false);
         this.setCircle((this.width / 2) - 2, 2, 2);
+        this.newEnemy = true;
 
         switch (difficutly){
             case 'easy':
                 this.acceleration = -3000;
                 this.maxSpeed = 700;
-                this.minIdleTime = 1000;
-                this.maxIdleTime = 3000;
+                this.minIdleTime = 500;
+                this.maxIdleTime = 2000;
                 this.health = 1;
                 this.damage = 1;
                 this.pointValue = 100;
-                this.hurtStateVelocity = -200;
+                this.hurtStateVelocity = -100;
+                this.spawnerDeactivationX = -this.width;
             break;
             case 'medium':
                 this.acceleration = -4000;
                 this.maxSpeed = 900;
                 this.minIdleTime = 500;
-                this.maxIdleTime = 3000;
+                this.maxIdleTime = 1000;
                 this.health = 2;
                 this.damage = 1;
                 this.pointValue = 150;
-                this.hurtStateVelocity = -200;
+                this.hurtStateVelocity = -100;
+                this.spawnerDeactivationX = -this.width;
             break;
             case 'hard':
                 this.acceleration = -4000;
                 this.maxSpeed = 1100;
                 this.minIdleTime = 500;
-                this.maxIdleTime = 1500;
+                this.maxIdleTime = 750;
                 this.health = 3;
                 this.damage = 1;
                 this.pointValue = 200;
-                this.hurtStateVelocity = -200;
+                this.hurtStateVelocity = -100;
+                this.spawnerDeactivationX = -this.width; //this.scene.scale.width / 2;
             break;
         }
         
@@ -114,10 +123,18 @@ class ChargingState extends State{
     enter(scene, enemy){
         enemy.setAccelerationX(enemy.acceleration);
         enemy.setMaxVelocity(enemy.maxSpeed);
+        enemy.sfx_charge.play();
     }
 
     execute(scene, enemy){
-        if (enemy.x < - enemy.width){
+        if (enemy.x < enemy.spawnerDeactivationX){
+            if (enemy.newEnemy){
+                enemy.spawner.deactivate();
+                enemy.newEnemy = false;
+            }
+        }
+        
+        if (enemy.x < -enemy.width){
             enemy.FSM.transition('dead', false);
         }
     }
@@ -143,8 +160,15 @@ class ShootingState extends State{
 
 class HurtState extends State{
     enter(scene, enemy){
-        this.setAccelerationX(0);
-        this.setVelocityX(enemy.hurtStateVelocity);
+        enemy.anims.play(`${enemy.difficutly}_destroy`);
+        enemy.sfx_destroy.play();
+        enemy.setAccelerationX(0);
+        enemy.setVelocityX(enemy.hurtStateVelocity);
+        scene.player.score += enemy.pointValue;
+        enemy.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            enemy.spawner.deactivate();
+            enemy.FSM.transition('dead', true);
+        })
     }
 
     execute(scene, enemy){
@@ -157,9 +181,11 @@ class HurtState extends State{
 }
 
 class DeadState extends State{
-    enter(scene, enemy, killByPlayer){
-        enemy.spawner.deactivate();
-        if (killByPlayer) scene.player.score += enemy.pointValue;
+    enter(scene, enemy, killedByPlayer){
+        if (killedByPlayer){
+            // enemy.spawner.deactivate();
+            // scene.player.score += enemy.pointValue;
+        }
         enemy.destroy();
     }
 
