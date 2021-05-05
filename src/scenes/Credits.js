@@ -17,21 +17,20 @@ export default class Credits extends Phaser.Scene{
             fontSize: '28px',
             //backgroundColor: '#A3C941',
             color: '#FFFFFF',
-            aline: 'center',
+            align: 'center',
             padding: {
                 top: 5,
                 bottom: 5,
             },
             fixedWidth: 0
         }
+
+        // add logo
+        this.add.image(game.config.width/ 2, game.config.height/2 - 60, 'logo');
         
 
         //add text
-        this.add.text(game.config.width/2, game.config.height/2 + 190, 'Sound Design: Emersen Lorenz', instructConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 160, 'Art and Animation: Marla De Leon & Aubrey Schelbauer', instructConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 120, 'Programming: Finn Morrison & Emersen Lorenz ', instructConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 90, 'Creator Credits', instructConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 5, 'Joppyshrek Productions Presents', instructConfig).setOrigin(0.5);
+        this.add.text(game.config.width/2, game.config.height/2 + 122, 'Programming: Finn Morrison & Emersen Lorenz\nArt and Animation: Marla De Leon & Aubrey Schelbauer\nSound Design: Emersen Lorenz', instructConfig).setOrigin(0.5);
 
        
     }

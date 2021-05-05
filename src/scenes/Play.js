@@ -1,7 +1,7 @@
 // imports
 import Player from "../prefabs/Player.js";
 import Enemy from "../prefabs/Enemy.js";
-import game from "../main.js";
+import Rock from "../prefabs/Rock.js";
 
 export default class Play extends Phaser.Scene{
     constructor(){
@@ -9,7 +9,9 @@ export default class Play extends Phaser.Scene{
     }
 
     init(){
-        this.SCROLL_SPEED = 5;
+        this.MAX_SCROLL_SPEED = 15;
+        this.MIN_SCROLL_SPEED = 5;
+        this.scrollSpeed = this.MIN_SCROLL_SPEED;
         this.TILE_SIZE = 32;
         this.DEBUG_MAX_PLAYER_HEALTH = 10;
     
@@ -27,12 +29,19 @@ export default class Play extends Phaser.Scene{
         this.ENEMY_SPAWN_Y_SEPERATION = 100;
         this.ENEMY_SPAWN_Y_VARIATION = 4;
         this.maxActiveSpawners = 1;
+
+        this.gameOver = false;
+        this.gameOverActivated = false;
     }
 
     create(){
         // add cursor buttons
         // TODO: Instead of using cursors, use space to jump and ASDF for other things
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.keySlash = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+        this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+        // console.log(this.keySlash);
 
         // play bgm
         this.bgm = this.sound.add('bgm', {volume: 0.1, loop: true});
@@ -49,6 +58,9 @@ export default class Play extends Phaser.Scene{
         
         this.createUI();
 
+        this.rockGroup = this.add.group({runChildUpdate: true});
+        this.spawnRock();
+
         // enemies
         this.enemySpawnerArray = [];
         this.enemySpawnerArray.push(new EnemySpawner(this, this.ENEMY_SPAWN_X, this.BOTTOM_ENEMY_SPAWN_Y));
@@ -61,12 +73,12 @@ export default class Play extends Phaser.Scene{
 
         // add dat.gui for debugging purposes
         // FIXME: Remove for the final build of the game
-        this.gui = new dat.GUI();
-        let playerFolder = this.gui.addFolder('Player Parameters');
-        playerFolder.add(this.player, 'currentHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
-        playerFolder.add(this.player, 'maxHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
-        playerFolder.add(this.player, 'score', 0, 5000, 50);
-        playerFolder.open();
+        // this.gui = new dat.GUI();
+        // let playerFolder = this.gui.addFolder('Player Parameters');
+        // playerFolder.add(this.player, 'currentHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
+        // playerFolder.add(this.player, 'maxHealth', 0, this.DEBUG_MAX_PLAYER_HEALTH, 1);
+        // playerFolder.add(this.player, 'score', 0, 5000, 50);
+        // playerFolder.open();
     }
 
     update(time, delta){
@@ -74,22 +86,62 @@ export default class Play extends Phaser.Scene{
         let deltaMultiplier = (delta/ ( 16 + 2/3 ));
 
         // scroll the background
-        this.background01.tilePositionX += (this.SCROLL_SPEED * 0.9) * deltaMultiplier;
-        this.background02.tilePositionX += (this.SCROLL_SPEED * 0.6) * deltaMultiplier;
-        this.background03.tilePositionX += (this.SCROLL_SPEED * 0.3) * deltaMultiplier;
-        this.groundTiles.tilePositionX  += (this.SCROLL_SPEED      ) * deltaMultiplier;
+        this.background01.tilePositionX += (this.scrollSpeed * 0.9) * deltaMultiplier;
+        this.background02.tilePositionX += (this.scrollSpeed * 0.6) * deltaMultiplier;
+        this.background03.tilePositionX += (this.scrollSpeed * 0.3) * deltaMultiplier;
+        this.groundTiles.tilePositionX  += (this.scrollSpeed      ) * deltaMultiplier;
 
         // update the player
-        this.player.update();
+        if (!this.gameOver){
+            this.player.update();
+            this.physics.overlap(this.player.attackHitbox, this.enemyGroup, this.attackEnemyOverlap, null, this);
+            this.physics.overlap(this.player.damageHitbox, this.rockGroup, this.hitByRock, null, this);
+        }
 
         // update the ui if it needs to
         this.updateUI();
 
-        // update the enemy spawners
-        // this.enemySpawnerArray.forEach(spawner => {spawner.update()});
-
         // check for enemy and player collision
         this.physics.overlap(this.player.damageHitbox, this.enemyGroup, this.playerEnemyOverlap, null, this);
+
+        if (this.player.currentHealth <= 0){
+            this.gameOver = true;
+        }
+
+        if (this.gameOver){
+
+            if (!this.gameOverActivated){
+
+                let instructConfig = {
+                    fontFamily: 'Courier',
+                    fontSize: '28px',
+                    //backgroundColor: '#A3C941',
+                    color: '#FFFFFF',
+                    align: 'center',
+                    padding: {
+                        top: 5,
+                        bottom: 5,
+                    },
+                    fixedWidth: 0
+                }
+
+                this.add.sprite(0,0,'game_over_background').setOrigin(0).setAlpha(0.5,0.5,0.5,0.5);
+                this.add.sprite(this.scale.width / 2,this.scale.height / 2 - 60,'game').setOrigin(0.5);
+                this.add.sprite(this.scale.width / 2,this.scale.height / 2 + 50,'over').setOrigin(0.5);
+                this.add.text(this.scale.width/2, this.scale.height/2 + 160, 'R to Restart\nM for Main Menu',instructConfig).setOrigin(0.5);
+                this.gameOverActivated = true;
+            }
+
+            if (Phaser.Input.Keyboard.JustDown(this.keyR)){
+                this.bgm.stop();
+                this.scene.restart();
+            }
+
+            if (Phaser.Input.Keyboard.JustDown(this.keyM)){
+                this.bgm.stop()
+                this.scene.start('menuScene');
+            }
+        }
     }
 
     createUI() {
@@ -133,7 +185,7 @@ export default class Play extends Phaser.Scene{
         this.groundHitbox.body.setSize(this.scale.width + 5 * this.TILE_SIZE, this.TILE_SIZE, false);
         this.groundHitbox.setOrigin(0);
     
-        this.groundTiles = this.add.tileSprite(0, this.scale.height - this.TILE_SIZE, this.scale.width, this.TILE_SIZE, 'groundTile').setOrigin(0);
+        this.groundTiles = this.add.tileSprite(0, this.scale.height - this.TILE_SIZE, this.scale.width, this.TILE_SIZE, 'ground_tile').setOrigin(0);
     }
 
     updateUI(){
@@ -168,7 +220,7 @@ export default class Play extends Phaser.Scene{
             for (let i = 0; i < this.scoreArray.length; i++){
                 let currentNumber = scoreString[i];
                 this.scoreArray[i].setFrame(`number000${currentNumber}`);
-                if (zeroBufferPassed || scoreString[i] != '0'){
+                if (zeroBufferPassed || scoreString[i] != '0' || i == this.scoreArray.length - 1){
                     this.scoreArray[i].alpha = 1;
                     zeroBufferPassed = true;
                 } else {
@@ -183,13 +235,33 @@ export default class Play extends Phaser.Scene{
     }
 
     playerEnemyOverlap(playerDamageHitbox, enemy){
+        // first check to make sure that the player is not already overlapping the player and that the player is not invincible
+        // and that the player's attack isn't currently active
+        if (!enemy.alreadyOverlapping && enemy.FSM.getState() == 'charging'){
+            this.player.takeDamage(enemy.damage);
+        }
+        enemy.alreadyOverlapping = true;
+    }
 
+    hitByRock(playerDamageHitbox, rock){
+        if (this.player.body.touching.down != 0) { this.player.takeDamage(1)};
+    }
+
+    attackEnemyOverlap(playerAttackHitbox, enemy){
+        if (playerAttackHitbox.attacking) {
+            playerAttackHitbox.successfulHit = true;
+            if (enemy.FSM.getState() == 'charging') enemy.FSM.transition('hurt');
+        };
     }
 
     beginEnemySpawning(){
         const {enemyDifficulty, spawnInterval, activeSpawnersAmount} = this.calculateDifficulty();
         this.maxActiveSpawners = activeSpawnersAmount;
         this.setActiveSpawners();
+    }
+
+    spawnRock(){
+        this.rockGroup.add(new Rock(this, this.scale.width + 100, this.scale.height - 32, 'rock'));
     }
 
     setActiveSpawners(){
@@ -215,6 +287,8 @@ export default class Play extends Phaser.Scene{
         while(!this.normalDisRandomChance(randomX, mu)){
             randomX = this.randomBetween(-6, 6);
         }
+
+        this.scrollSpeed = this.ratioBetween(mu, -6, 6) * (this.MAX_SCROLL_SPEED - this.MIN_SCROLL_SPEED) + this.MIN_SCROLL_SPEED;
 
         // thresholds for enemy difficutly
         // easy < -2
@@ -299,12 +373,6 @@ class EnemySpawner{
         this.scene = scene;
         this.x = x;
         this.y = y;
-    }
-
-    update(){
-        if (this.active && this.open){
-
-        }
     }
 
     spawnEnemy(){

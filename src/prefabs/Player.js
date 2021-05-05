@@ -43,7 +43,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
     UINeedsUpdate;
     /**@type {StateMachine} finite state machine for the player*/
     FSM;
-    /**@type {PlayerAttackHitbox} a collider for where the player's attacks hit*/
+    /**@type {PlayerSecondaryHitbox} a collider for where the player's attacks hit*/
     attackHitbox;
 
     /**@type {bool} if the player is invincible */
@@ -57,8 +57,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
     
     constructor(scene, x, y, texture){
         super(scene, x, y, texture);
-        this.currentHealth = 2;
-        this.maxHealth = 2;
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+        this.currentHealth = 3;
+        this.maxHealth = 3;
         this.UINeedsUpdate = true;
 
         this.FSM = new StateMachine('running', {
@@ -70,20 +72,21 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
             dead: new DeadState(),
         },[scene, this]);
 
-        this.attackHitbox = new PlayerAttackHitbox(scene, x + this.width, y + this.height);
-        this.damageHitbox = new PlayerDamageHitbox(scene, x, y);
-        this.hitboxGroup = scene.add.group({ runChildUpdate: true})
-        this.hitboxGroup.add(this.attackHitbox);
-        this.hitboxGroup.add(this.damageHitbox);
+        this.sfx_attack = scene.sound.add('sfx_attack', {volume: 0.1});
+        this.sfx_hurt = scene.sound.add('sfx_injured', {volume: 0.2});
+
+        // this.attackHitbox = new PlayerAttackHitbox(scene, x + this.width, y + this.height);
+        this.attackHitbox = new PlayerSecondaryHitbox(scene, this, x + this.width, y + this.height, 40, 84, this.body.width,this.body.height - (this.body.halfHeight + 84 / 2), undefined, 'slash');
+        this.attackHitbox.attacking = false;
+        this.attackHitbox.successfulHit = false;
+        this.attackHitbox.alpha = 0;
+        this.damageHitbox = new PlayerSecondaryHitbox(scene, this, x, y, 40, 60, this.body.halfWidth - 8, this.body.halfHeight - 30, 0x0000FF);
 
         this.grounded = false;
         this.invincible = false;
         this.maxJumps = 1;
         this.jumpsRemaining = this.maxJumps;
         this.score = 0;
-        
-        scene.add.existing(this);
-        scene.physics.add.existing(this);
         this.setOrigin(0,0);
 
         this.body.overlapX = 32;
@@ -92,53 +95,46 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
     update(time, delta){
         this.FSM.step();
 
-        // update the 
-        this.attackHitbox.x = this.body.x + this.body.width;
-        this.attackHitbox.y = this.body.y + this.body.height - (this.body.halfHeight + this.attackHitbox.body.halfHeight);
+        // update the attack hitbox
+        this.attackHitbox.update();
 
         // update damage hitbox
-        this.damageHitbox.x = this.body.x + this.body.halfWidth - this.damageHitbox.body.halfWidth;
-        this.damageHitbox.y = this.body.y + this.body.halfHeight - this.damageHitbox.body.halfHeight;
+        this.damageHitbox.update();
+    }
+
+    takeDamage(damage){
+        if (!this.invincible && !this.attackHitbox.attacking){
+            this.currentHealth -= damage;
+            this.FSM.transition('hurt');
+        }
     }
 }
 
-class PlayerAttackHitbox extends Phaser.Physics.Arcade.Sprite{
-    constructor(scene, x, y){
-        super(scene, x, y);
+class PlayerSecondaryHitbox extends Phaser.Physics.Arcade.Sprite{
+    constructor(scene, player, x, y, width, height, xOffset, yOffset, debugBodyColor = 0xFF0000, texture){
+        super(scene, x, y, texture);
+        this.player = player;
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        this.body.setSize(50,70,false);
-        this.body.setAllowGravity(false);
-        this.setOrigin(0)
-        this.setDebugBodyColor(0xFF0000);
 
-    }
-    update(){
-
-    }
-}
-
-class PlayerDamageHitbox extends Phaser.Physics.Arcade.Sprite{
-    constructor(scene, x, y){
-        super(scene, x, y);
-
-        scene.add.existing(this);
-        scene.physics.add.existing(this);
-        this.body.setSize(40,40,false);
+        this.body.setSize(width, height, false);
         this.body.setAllowGravity(false);
         this.setOrigin(0);
-        this.setDebugBodyColor(0x0000FF);
+        this.setDebugBodyColor(debugBodyColor);
     }
     update(){
-
+        this.body.x = this.player.body.x + this.xOffset;
+        this.body.y = this.player.body.y + this.yOffset;
     }
 }
 
 class RunningState extends State {
     enter(scene, player){
         // console.log('running');
-        player.anims.play('ninja_run', true);
+        player.anims.play('run', true);
         if (player.invincible){
             this.invincibleTimer = scene.time.delayedCall(INVINCIBILITY_TIME, () =>{ player.invincible = false; });
         }
@@ -147,6 +143,8 @@ class RunningState extends State {
 
     execute(scene, player){
         const {left, right, up, down, space, shift} = scene.cursors;
+        const keySlash = scene.keySlash;
+        // console.log(keySlash);
 
         // make the player semitransparent if they are invincible
         player.alpha = player.invincible ? 0.5 : 1;
@@ -154,6 +152,11 @@ class RunningState extends State {
         // transition to Jump
         if (Phaser.Input.Keyboard.JustDown(space)){
             player.FSM.transition('jumping');
+            return;
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(keySlash)){
+            player.FSM.transition('attacking');
             return;
         }
     }
@@ -166,11 +169,12 @@ class RunningState extends State {
 class JumpingState extends State {
     enter(scene, player){
         // console.log('jumping');
-        player.anims.play('ninja_jump');
+        player.anims.play('jump');
     }
 
     execute(scene, player){
         const {left, right, up, down, space, shift} = scene.cursors;
+        const keySlash = scene.keySlash;
 
         if (player.jumpsRemaining > 0 && Phaser.Input.Keyboard.DownDuration(space, JUMP_TIMER)){
             player.body.velocity.y = JUMP_VELOCITY;
@@ -178,6 +182,11 @@ class JumpingState extends State {
 
         if (Phaser.Input.Keyboard.UpDuration(space)){
             player.jumpsRemaining--;
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(keySlash)){
+            player.FSM.transition('attackingInAir');
+            return;
         }
 
         let jumping = player.body.velocity.y < 0;
@@ -195,7 +204,19 @@ class JumpingState extends State {
 
 class AttackingState extends State {
     enter(scene, player){
-
+        player.attackHitbox.attacking = true;
+        player.anims.play('attack_2', false);
+        player.sfx_attack.play();
+        player.attackHitbox.alpha = 1;
+        player.attackHitbox.anims.play('slash', false);
+        scene.time.delayedCall(100, () => {player.attackHitbox.attacking = false});
+        player.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'attack_2', () => {
+            this.deactivate(scene, player);
+            scene.time.delayedCall(250, () => {player.FSM.transition('running')});
+        })
+        player.attackHitbox.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            player.attackHitbox.alpha = 0;
+        })
     }
 
     execute(scene, player){
@@ -203,13 +224,28 @@ class AttackingState extends State {
     }
 
     exit(scene, player){
-        
+        this.deactivate(scene, player);
+    }
+
+    deactivate(scene, player){
+        player.attackHitbox.attacking = false;
     }
 }
 
 class AttackingInAirState extends State {
     enter(scene, player){
-
+        player.attackHitbox.attacking = true;
+        player.anims.play('attack_2', false);
+        player.sfx_attack.play();
+        player.attackHitbox.alpha = 1;
+        player.attackHitbox.anims.play('slash', false);
+        player.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            this.deactivate(scene, player);
+            scene.time.delayedCall(250, () => {player.FSM.transition('running')});
+        })
+        player.attackHitbox.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            player.attackHitbox.alpha = 0;
+        })
     }
 
     execute(scene, player){
@@ -219,15 +255,23 @@ class AttackingInAirState extends State {
     exit(scene, player){
         
     }
+
+    deactivate(scene, player){
+        player.attackHitbox.attacking = false;
+    }
 }
 
 class HurtState extends State {
-    enter(scene, player, enemy){
-        // console.log(enemy);
+    enter(scene, player){
+        console.log('hurt');
         player.invincible = true;
         this.recovered = false;
         this.touchedDown = player.body.touching.down;
         this.timerStarted = false;
+        player.anims.play('hurt');
+        player.sfx_hurt.play();
+
+        player.alpha = 0.5;
     }
 
     execute(scene, player){
