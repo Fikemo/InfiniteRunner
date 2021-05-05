@@ -269,6 +269,7 @@ class HurtState extends State {
         this.touchedDown = player.body.touching.down;
         this.timerStarted = false;
         player.anims.play('hurt');
+        player.sfx_hurt.play();
 
         player.alpha = 0.5;
     }

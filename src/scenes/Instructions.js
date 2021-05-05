@@ -37,8 +37,10 @@ export default class Instructions extends Phaser.Scene{
         //this.add.image(this.scale.width / 2, this.scale.height / 2 - 54,'title').setOrigin(0.5);
 
 
+        this.sfx_start = this.sound.add('sfx_start', {volume: 0.4});
+
         // this.input.on('pointerdown', () => this.scene.start('playScene'));
-        this.cursors.space.on('down', () => {this.bgm.stop(); this.scene.start('playScene')});
+        this.cursors.space.on('down', () => {this.sfx_start.play(); this.bgm.stop(); this.scene.start('playScene')});
         
     }
 

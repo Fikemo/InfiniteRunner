@@ -55,6 +55,7 @@ export default class Load extends Phaser.Scene {
         this.load.audio('sfx_EMovement', 'enemyStrollin.wav');
         this.load.audio('sfx_enemyInjured', 'enemyFleshwound.wav');
         this.load.audio('sfx_destroy', 'EnemyExplosion.wav');
+        this.load.audio('sfx_start', 'StartGameSound.wav');
 
         this.load.audio('sfx_charge', 'EnemyChargeSound.wav');
 
