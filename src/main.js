@@ -33,7 +33,7 @@ let config = {
     scene: [Load, Menu, Instructions, Credits, Play],
     scale: {
         // mode: Phaser.Scale.FIT,
-        // autoCenter: Phaser.Scale.CENTER_BOTH,
+        autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
     },
     physics: {
         default: 'arcade',
