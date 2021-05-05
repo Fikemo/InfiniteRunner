@@ -72,6 +72,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite{
 
         this.attackHitbox = new PlayerAttackHitbox(scene, x + this.width, y + this.height);
         this.damageHitbox = new PlayerDamageHitbox(scene, x, y);
+        this.hitboxGroup = scene.add.group({ runChildUpdate: true})
+        this.hitboxGroup.add(this.attackHitbox);
+        this.hitboxGroup.add(this.damageHitbox);
 
         this.grounded = false;
         this.invincible = false;
@@ -111,6 +114,9 @@ class PlayerAttackHitbox extends Phaser.Physics.Arcade.Sprite{
         this.setDebugBodyColor(0xFF0000);
 
     }
+    update(){
+
+    }
 }
 
 class PlayerDamageHitbox extends Phaser.Physics.Arcade.Sprite{
@@ -123,6 +129,9 @@ class PlayerDamageHitbox extends Phaser.Physics.Arcade.Sprite{
         this.body.setAllowGravity(false);
         this.setOrigin(0);
         this.setDebugBodyColor(0x0000FF);
+    }
+    update(){
+
     }
 }
 
