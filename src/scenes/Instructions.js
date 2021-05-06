@@ -32,7 +32,7 @@ export default class Instructions extends Phaser.Scene{
         this.add.image(this.scale.width/2, this.scale.height / 2,'background02');
         this.add.image(this.scale.width/2, this.scale.height / 2,'background01');
 
-        this.add.text(game.config.width/2, game.config.height/2, 'Press F to attack\nPress SPACE to jump\nDestroy as many enmy robots as you can\nAvoid incoming rocks\n\nPress SPACE to continue', instructConfig).setOrigin(0.5);
+        this.add.text(game.config.width/2, game.config.height/2, 'Press F to attack\nPress SPACE to jump\nDestroy as many enemy robots as you can\nAvoid incoming rocks\n\nPress SPACE to continue', instructConfig).setOrigin(0.5);
 
         //this.add.image(this.scale.width / 2, this.scale.height / 2 - 54,'title').setOrigin(0.5);
 
